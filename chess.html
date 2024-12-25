@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الشطرنج مع أدوار اللاعبين</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        #chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 80px);
+            grid-template-rows: repeat(8, 80px);
+            border: 2px solid black;
+            margin-bottom: 20px;
+        }
+
+        .square {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+        }
+
+        .white {
+            background-color: #eee;
+        }
+
+        .black {
+            background-color: #555;
+            color: white;
+        }
+
+        .piece {
+            cursor: grab;
+        }
+
+        .dragging {
+            opacity: 0.5;
+        }
+
+        .timer {
+            font-size: 24px;
+            margin: 10px;
+        }
+
+        .active {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="timer" id="white-timer">الوقت المتبقي (الأبيض): 40 ثانية</div>
+    <div class="timer" id="black-timer">الوقت المتبقي (الأسود): 40 ثانية</div>
+    <div id="chessboard"></div>
+
+    <script>
+        const board = document.getElementById('chessboard');
+        const pieces = {
+            'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+            'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+        };
+
+        const initialBoard = [
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
+        ];
+
+        let currentPlayer = 'white';
+        let timers = { white: 40, black: 40 };
+        let timerInterval;
+        let hasMoved = false;
+
+        const whiteTimer = document.getElementById('white-timer');
+        const blackTimer = document.getElementById('black-timer');
+
+        function createChessboard() {
+            board.innerHTML = '';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'square ' + ((row + col) % 2 === 0 ? 'white' : 'black');
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+
+                    const piece = initialBoard[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.textContent = pieces[piece];
+                        pieceElement.className = 'piece';
+                        pieceElement.draggable = true;
+                        pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
+                        square.appendChild(pieceElement);
+                    }
+
+                    square.addEventListener('dragover', onDragOver);
+                    square.addEventListener('drop', onDrop);
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        let draggedPiece = null;
+        let fromSquare = null;
+
+        board.addEventListener('dragstart', (event) => {
+            if (
+                event.target.classList.contains('piece') &&
+                event.target.dataset.player === currentPlayer &&
+                !hasMoved
+            ) {
+                draggedPiece = event.target;
+                fromSquare = event.target.parentElement;
+                draggedPiece.classList.add('dragging');
+            } else {
+                event.preventDefault();
+            }
+        });
+
+        board.addEventListener('dragend', () => {
+            if (draggedPiece) {
+                draggedPiece.classList.remove('dragging');
+            }
+            draggedPiece = null;
+            fromSquare = null;
+        });
+
+        function onDragOver(event) {
+            event.preventDefault();
+        }
+
+        function onDrop(event) {
+            event.preventDefault();
+            if (draggedPiece && fromSquare) {
+                const toSquare = event.target.closest('.square');
+                if (toSquare && toSquare !== fromSquare) {
+                    const fromRow = parseInt(fromSquare.dataset.row);
+                    const fromCol = parseInt(fromSquare.dataset.col);
+                    const toRow = parseInt(toSquare.dataset.row);
+                    const toCol = parseInt(toSquare.dataset.col);
+
+                    const piece = initialBoard[fromRow][fromCol];
+                    if (isMoveLegal(piece, fromRow, fromCol, toRow, toCol)) {
+                        toSquare.innerHTML = '';
+                        toSquare.appendChild(draggedPiece);
+                        initialBoard[toRow][toCol] = piece;
+                        initialBoard[fromRow][fromCol] = null;
+                        hasMoved = true;
+                        switchTurn();
+                    }
+                }
+            }
+        }
+
+        function isMoveLegal(piece, fromRow, fromCol, toRow, toCol) {
+            // قوانين الحركة
+            return true; // (قم بإضافة قوانين الحركة حسب القطعة)
+        }
+
+        function switchTurn() {
+            hasMoved = false;
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            updateActivePlayerDisplay();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timers[currentPlayer]--;
+                if (timers[currentPlayer] <= 0) {
+                    clearInterval(timerInterval);
+                    alert(`انتهى وقت ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
+                }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            whiteTimer.textContent = `الوقت المتبقي (الأبيض): ${timers.white} ثانية`;
+            blackTimer.textContent = `الوقت المتبقي (الأسود): ${timers.black} ثانية`;
+        }
+
+        function updateActivePlayerDisplay() {
+            whiteTimer.classList.toggle('active', currentPlayer === 'white');
+            blackTimer.classList.toggle('active', currentPlayer === 'black');
+        }
+
+        createChessboard();
+        startTimer();
+    </script>
+</body>
+
+</html>
