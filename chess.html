@@ -33,6 +33,7 @@
             align-items: center;
             font-size: calc(4vw);
             position: relative;
+            transition: background-color 0.3s;
         }
 
         .white {
@@ -44,14 +45,14 @@
             color: white;
         }
 
-        .piece {
-            position: absolute;
-            cursor: grab;
-            touch-action: none;
+        .highlight {
+            background-color: yellow !important;
         }
 
-        .dragging {
-            opacity: 0.5;
+        .piece {
+            position: relative;
+            cursor: pointer;
+            z-index: 10;
         }
     </style>
 </head>
@@ -77,8 +78,7 @@
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
         ];
 
-        let draggedPiece = null;
-        let startSquare = null;
+        let selectedSquare = null;
 
         function createChessboard() {
             board.innerHTML = '';
@@ -99,9 +99,7 @@
                         square.appendChild(pieceElement);
 
                         // إضافة أحداث اللمس
-                        pieceElement.addEventListener('touchstart', onTouchStart);
-                        pieceElement.addEventListener('touchmove', onTouchMove);
-                        pieceElement.addEventListener('touchend', onTouchEnd);
+                        pieceElement.addEventListener('touchstart', () => onPieceTouch(square));
                     }
 
                     board.appendChild(square);
@@ -109,51 +107,15 @@
             }
         }
 
-        function onTouchStart(event) {
-            event.preventDefault();
-            const touch = event.touches[0];
-            draggedPiece = event.target;
-            startSquare = draggedPiece.parentElement;
-
-            draggedPiece.style.position = 'absolute';
-            draggedPiece.style.zIndex = '1000';
-            draggedPiece.classList.add('dragging');
-        }
-
-        function onTouchMove(event) {
-            if (!draggedPiece) return;
-
-            const touch = event.touches[0];
-            const boardRect = board.getBoundingClientRect();
-
-            // تحريك القطعة بناءً على موضع اللمس
-            const x = touch.clientX - boardRect.left - draggedPiece.offsetWidth / 2;
-            const y = touch.clientY - boardRect.top - draggedPiece.offsetHeight / 2;
-            draggedPiece.style.left = `${x}px`;
-            draggedPiece.style.top = `${y}px`;
-        }
-
-        function onTouchEnd(event) {
-            if (!draggedPiece) return;
-
-            const touch = event.changedTouches[0];
-            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-            const targetSquare = targetElement?.closest('.square');
-
-            if (targetSquare && targetSquare !== startSquare) {
-                targetSquare.innerHTML = '';
-                targetSquare.appendChild(draggedPiece);
-            } else {
-                // إعادة القطعة إلى المربع الأصلي
-                draggedPiece.style.left = '';
-                draggedPiece.style.top = '';
+        function onPieceTouch(square) {
+            // إزالة التمييز عن المربع السابق
+            if (selectedSquare) {
+                selectedSquare.classList.remove('highlight');
             }
 
-            draggedPiece.style.position = '';
-            draggedPiece.style.zIndex = '';
-            draggedPiece.classList.remove('dragging');
-            draggedPiece = null;
-            startSquare = null;
+            // تحديد المربع الحالي
+            selectedSquare = square;
+            selectedSquare.classList.add('highlight');
         }
 
         createChessboard();
