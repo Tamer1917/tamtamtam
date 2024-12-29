@@ -119,6 +119,8 @@
 
                     square.addEventListener('dragover', onDragOver);
                     square.addEventListener('drop', onDrop);
+                    square.addEventListener('dragenter', onDragEnter);
+                    square.addEventListener('dragleave', onDragLeave);
                     board.appendChild(square);
                 }
             }
