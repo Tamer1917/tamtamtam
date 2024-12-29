@@ -47,8 +47,8 @@
         }
 
         .piece {
-            cursor: grab;
             position: absolute;
+            cursor: grab;
         }
 
         .dragging {
@@ -79,7 +79,7 @@
         ];
 
         let draggedPiece = null;
-        let originalPosition = null;
+        let startSquare = null;
 
         function createChessboard() {
             board.innerHTML = '';
@@ -99,6 +99,7 @@
                         pieceElement.dataset.col = col;
                         square.appendChild(pieceElement);
 
+                        // إضافة أحداث اللمس
                         pieceElement.addEventListener('touchstart', onTouchStart);
                         pieceElement.addEventListener('touchmove', onTouchMove);
                         pieceElement.addEventListener('touchend', onTouchEnd);
@@ -110,9 +111,12 @@
         }
 
         function onTouchStart(event) {
+            event.preventDefault();
             const touch = event.touches[0];
             draggedPiece = event.target;
-            originalPosition = { x: touch.clientX, y: touch.clientY };
+            startSquare = draggedPiece.parentElement;
+
+            draggedPiece.style.zIndex = '1000';
             draggedPiece.classList.add('dragging');
         }
 
@@ -120,10 +124,12 @@
             if (!draggedPiece) return;
 
             const touch = event.touches[0];
-            const dx = touch.clientX - originalPosition.x;
-            const dy = touch.clientY - originalPosition.y;
+            const boardRect = board.getBoundingClientRect();
 
-            draggedPiece.style.transform = `translate(${dx}px, ${dy}px)`;
+            // تحريك القطعة بناءً على موضع اللمس
+            const x = touch.clientX - boardRect.left - draggedPiece.offsetWidth / 2;
+            const y = touch.clientY - boardRect.top - draggedPiece.offsetHeight / 2;
+            draggedPiece.style.transform = `translate(${x}px, ${y}px)`;
         }
 
         function onTouchEnd(event) {
@@ -133,15 +139,18 @@
             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
             const targetSquare = targetElement?.closest('.square');
 
-            if (targetSquare && targetSquare !== draggedPiece.parentElement) {
+            if (targetSquare && targetSquare !== startSquare) {
                 targetSquare.innerHTML = '';
                 targetSquare.appendChild(draggedPiece);
+            } else {
+                // إعادة القطعة إلى المربع الأصلي
+                draggedPiece.style.transform = '';
             }
 
-            draggedPiece.style.transform = '';
+            draggedPiece.style.zIndex = '';
             draggedPiece.classList.remove('dragging');
             draggedPiece = null;
-            originalPosition = null;
+            startSquare = null;
         }
 
         createChessboard();
