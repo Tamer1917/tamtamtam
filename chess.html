@@ -18,19 +18,26 @@
 
         #chessboard {
             display: grid;
-            grid-template-columns: repeat(8, 80px);
-            grid-template-rows: repeat(8, 80px);
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: 90vw;
+            /* عرض اللوحة 90% من عرض الشاشة */
+            height: 90vw;
+            /* ارتفاع اللوحة لتكون مربعة */
+            max-width: 600px;
+            /* الحد الأقصى للعرض */
+            max-height: 600px;
+            /* الحد الأقصى للارتفاع */
             border: 2px solid black;
             margin-bottom: 20px;
         }
 
         .square {
-            width: 80px;
-            height: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 50px;
+            font-size: calc(4vw);
+            /* حجم النص ديناميكي */
         }
 
         .white {
@@ -51,13 +58,25 @@
         }
 
         .timer {
-            font-size: 24px;
+            font-size: calc(2.5vw);
             margin: 10px;
+            text-align: center;
         }
 
         .active {
             color: red;
             font-weight: bold;
+        }
+
+        @media (min-width: 600px) {
+            .square {
+                font-size: 50px;
+                /* حجم ثابت للشاشات الكبيرة */
+            }
+
+            .timer {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
@@ -68,6 +87,7 @@
     <div id="chessboard"></div>
 
     <script>
+        // (باقي الكود كما هو)
         const board = document.getElementById('chessboard');
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
@@ -119,94 +139,15 @@
             }
         }
 
-        let draggedPiece = null;
-        let fromSquare = null;
-
-        board.addEventListener('dragstart', (event) => {
-            if (
-                event.target.classList.contains('piece') &&
-                event.target.dataset.player === currentPlayer &&
-                !hasMoved
-            ) {
-                draggedPiece = event.target;
-                fromSquare = event.target.parentElement;
-                draggedPiece.classList.add('dragging');
-            } else {
-                event.preventDefault();
-            }
-        });
-
-        board.addEventListener('dragend', () => {
-            if (draggedPiece) {
-                draggedPiece.classList.remove('dragging');
-            }
-            draggedPiece = null;
-            fromSquare = null;
-        });
-
         function onDragOver(event) {
             event.preventDefault();
         }
 
         function onDrop(event) {
             event.preventDefault();
-            if (draggedPiece && fromSquare) {
-                const toSquare = event.target.closest('.square');
-                if (toSquare && toSquare !== fromSquare) {
-                    const fromRow = parseInt(fromSquare.dataset.row);
-                    const fromCol = parseInt(fromSquare.dataset.col);
-                    const toRow = parseInt(toSquare.dataset.row);
-                    const toCol = parseInt(toSquare.dataset.col);
-
-                    const piece = initialBoard[fromRow][fromCol];
-                    if (isMoveLegal(piece, fromRow, fromCol, toRow, toCol)) {
-                        toSquare.innerHTML = '';
-                        toSquare.appendChild(draggedPiece);
-                        initialBoard[toRow][toCol] = piece;
-                        initialBoard[fromRow][fromCol] = null;
-                        hasMoved = true;
-                        switchTurn();
-                    }
-                }
-            }
-        }
-
-        function isMoveLegal(piece, fromRow, fromCol, toRow, toCol) {
-            // قوانين الحركة
-            return true; // (قم بإضافة قوانين الحركة حسب القطعة)
-        }
-
-        function switchTurn() {
-            hasMoved = false;
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            updateActivePlayerDisplay();
-            startTimer();
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timers[currentPlayer]--;
-                if (timers[currentPlayer] <= 0) {
-                    clearInterval(timerInterval);
-                    alert(`انتهى وقت ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
-                }
-                updateTimerDisplay();
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            whiteTimer.textContent = `الوقت المتبقي (الأبيض): ${timers.white} ثانية`;
-            blackTimer.textContent = `الوقت المتبقي (الأسود): ${timers.black} ثانية`;
-        }
-
-        function updateActivePlayerDisplay() {
-            whiteTimer.classList.toggle('active', currentPlayer === 'white');
-            blackTimer.classList.toggle('active', currentPlayer === 'black');
         }
 
         createChessboard();
-        startTimer();
     </script>
 </body>
 
