@@ -49,12 +49,30 @@
         .piece {
             cursor: grab;
         }
+
+        #reset-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        #reset-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <div id="chessboard"></div>
+    <button id="reset-button">بداية جديدة</button>
+
     <script>
         const board = document.getElementById('chessboard');
+        const resetButton = document.getElementById('reset-button');
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
@@ -193,6 +211,12 @@
         function saveBoardState() {
             localStorage.setItem('chessBoard', JSON.stringify(initialBoard));
         }
+
+        // إعادة تعيين اللعبة
+        resetButton.addEventListener('click', () => {
+            localStorage.removeItem('chessBoard');
+            window.location.reload();
+        });
 
         createChessboard();
     </script>
