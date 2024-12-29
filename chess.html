@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الشطرنج مع أدوار اللاعبين</title>
+    <title>لعبة الشطرنج</title>
     <style>
         body {
             display: flex;
@@ -15,15 +14,12 @@
             background-color: #f0f0f0;
             margin: 0;
         }
-
         #chessboard {
             display: grid;
             grid-template-columns: repeat(8, 80px);
             grid-template-rows: repeat(8, 80px);
             border: 2px solid black;
-            margin-bottom: 20px;
         }
-
         .square {
             width: 80px;
             height: 80px;
@@ -31,41 +27,28 @@
             justify-content: center;
             align-items: center;
             font-size: 50px;
+            cursor: pointer;
         }
-
         .white {
             background-color: #eee;
         }
-
         .black {
             background-color: #555;
             color: white;
         }
-
-        .piece {
-            cursor: grab;
+        .highlight {
+            background-color: yellow;
         }
-
-        .dragging {
-            opacity: 0.5;
-        }
-
         .timer {
             font-size: 24px;
             margin: 10px;
         }
-
         .active {
             color: red;
             font-weight: bold;
         }
-
-        .highlight {
-            background-color: yellow;
-        }
     </style>
 </head>
-
 <body>
     <div class="timer" id="white-timer">الوقت المتبقي (الأبيض): 40 ثانية</div>
     <div class="timer" id="black-timer">الوقت المتبقي (الأسود): 40 ثانية</div>
@@ -74,6 +57,9 @@
 
     <script>
         const board = document.getElementById('chessboard');
+        const whiteTimer = document.getElementById('white-timer');
+        const blackTimer = document.getElementById('black-timer');
+
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
@@ -92,11 +78,11 @@
 
         let currentPlayer = 'white';
         let timers = { white: 40, black: 40 };
-        let timerInterval;
+        let highlightedSquares = [];
+        let draggedPiece = null;
+        let fromSquare = null;
         let hasMoved = false;
-
-        const whiteTimer = document.getElementById('white-timer');
-        const blackTimer = document.getElementById('black-timer');
+        let timerInterval;
 
         function createChessboard() {
             board.innerHTML = '';
@@ -112,8 +98,8 @@
                         const pieceElement = document.createElement('div');
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
-                        pieceElement.draggable = true;
                         pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
+                        pieceElement.draggable = true;
                         square.appendChild(pieceElement);
                     }
 
@@ -124,102 +110,6 @@
                     board.appendChild(square);
                 }
             }
-        }
-
-        let draggedPiece = null;
-        let fromSquare = null;
-        let highlightedSquares = [];
-
-        board.addEventListener('dragstart', (event) => {
-            if (
-                event.target.classList.contains('piece') &&
-                event.target.dataset.player === currentPlayer &&
-                !hasMoved
-            ) {
-                draggedPiece = event.target;
-                fromSquare = event.target.parentElement;
-                draggedPiece.classList.add('dragging');
-                highlightValidMoves(draggedPiece);
-            } else {
-                event.preventDefault();
-            }
-        });
-
-        board.addEventListener('dragend', () => {
-            if (draggedPiece) {
-                draggedPiece.classList.remove('dragging');
-            }
-            draggedPiece = null;
-            fromSquare = null;
-            clearHighlightedSquares();
-        });
-
-        function highlightValidMoves(pieceElement) {
-            const row = parseInt(fromSquare.dataset.row);
-            const col = parseInt(fromSquare.dataset.col);
-            const piece = initialBoard[row][col];
-
-            // إزالة التمييز القديم
-            clearHighlightedSquares();
-
-            if (piece === 'P' || piece === 'p') {
-                // تمييز الحركة الممكنة للبيدق
-                highlightPawnMoves(piece, row, col);
-            } else if (piece === 'R' || piece === 'r') {
-                // تمييز الحركة الممكنة للرخ
-                highlightRookMoves(row, col);
-            } else if (piece === 'N' || piece === 'n') {
-                // تمييز الحركة الممكنة للحصان
-                highlightKnightMoves(row, col);
-            }
-        }
-
-        function highlightPawnMoves(piece, row, col) {
-            const direction = piece === 'P' ? -1 : 1;
-            if (initialBoard[row + direction] && initialBoard[row + direction][col] === null) {
-                highlightSquare(row + direction, col);
-            }
-            if (initialBoard[row + direction] && initialBoard[row + direction][col + 1] !== null &&
-                initialBoard[row + direction][col + 1].toLowerCase() !== piece.toLowerCase()) {
-                highlightSquare(row + direction, col + 1);
-            }
-            if (initialBoard[row + direction] && initialBoard[row + direction][col - 1] !== null &&
-                initialBoard[row + direction][col - 1].toLowerCase() !== piece.toLowerCase()) {
-                highlightSquare(row + direction, col - 1);
-            }
-        }
-
-        function highlightRookMoves(row, col) {
-            for (let i = row + 1; i < 8; i++) {
-                if (initialBoard[i][col] !== null) break;
-                highlightSquare(i, col);
-            }
-            for (let i = row - 1; i >= 0; i--) {
-                if (initialBoard[i][col] !== null) break;
-                highlightSquare(i, col);
-            }
-            for (let i = col + 1; i < 8; i++) {
-                if (initialBoard[row][i] !== null) break;
-                highlightSquare(row, i);
-            }
-            for (let i = col - 1; i >= 0; i--) {
-                if (initialBoard[row][i] !== null) break;
-                highlightSquare(row, i);
-            }
-        }
-
-        function highlightKnightMoves(row, col) {
-            const moves = [
-                [-2, -1], [-2, 1], [2, -1], [2, 1],
-                [-1, -2], [-1, 2], [1, -2], [1, 2]
-            ];
-            moves.forEach(([rOffset, cOffset]) => {
-                const newRow = row + rOffset;
-                const newCol = col + cOffset;
-                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
-                    highlightSquare(newRow, newCol);
-                }
-            });
         }
 
         function highlightSquare(row, col) {
@@ -235,7 +125,43 @@
             highlightedSquares = [];
         }
 
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timers[currentPlayer]--;
+                if (timers[currentPlayer] <= 0) {
+                    clearInterval(timerInterval);
+                    alert(`${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'} انتهى وقته!`);
+                }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            whiteTimer.textContent = `الوقت المتبقي (الأبيض): ${timers.white} ثانية`;
+            blackTimer.textContent = `الوقت المتبقي (الأسود): ${timers.black} ثانية`;
+        }
+
+        function switchTurn() {
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            updateActivePlayerDisplay();
+            startTimer();
+        }
+
+        function updateActivePlayerDisplay() {
+            whiteTimer.classList.toggle('active', currentPlayer === 'white');
+            blackTimer.classList.toggle('active', currentPlayer === 'black');
+        }
+
         function onDragOver(event) {
+            event.preventDefault();
+        }
+
+        function onDragEnter(event) {
+            event.preventDefault();
+        }
+
+        function onDragLeave(event) {
             event.preventDefault();
         }
 
@@ -287,37 +213,7 @@
             return false;
         }
 
-        function switchTurn() {
-            hasMoved = false;
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            updateActivePlayerDisplay();
-            startTimer();
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timers[currentPlayer]--;
-                if (timers[currentPlayer] <= 0) {
-                    clearInterval(timerInterval);
-                    alert(`انتهى وقت ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
-                }
-                updateTimerDisplay();
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            whiteTimer.textContent = `الوقت المتبقي (الأبيض): ${timers.white} ثانية`;
-            blackTimer.textContent = `الوقت المتبقي (الأسود): ${timers.black} ثانية`;
-        }
-
-        function updateActivePlayerDisplay() {
-            whiteTimer.classList.toggle('active', currentPlayer === 'white');
-            blackTimer.classList.toggle('active', currentPlayer === 'black');
-        }
-
         function resetGame() {
-            // إعادة تعيين اللوحة إلى حالتها الأصلية
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     initialBoard[row][col] = row === 1 ? 'p' : (row === 6 ? 'P' : (row === 0 || row === 7 ? ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'][col] : null));
@@ -334,5 +230,4 @@
         startTimer();
     </script>
 </body>
-
 </html>
