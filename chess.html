@@ -127,6 +127,7 @@
                     movePiece(selectedSquare, square);
                     selectedSquare.classList.remove('highlight');
                     selectedSquare = null;
+                    switchTurn(); // التبديل بين الأدوار بعد كل حركة
                 } else {
                     selectedSquare.classList.remove('highlight');
                     selectedSquare = null;
@@ -203,8 +204,11 @@
             initialBoard[fromRow][fromCol] = null;
 
             saveBoardState();
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             createChessboard();
+        }
+
+        function switchTurn() {
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
         }
 
         function saveBoardState() {
