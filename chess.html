@@ -171,8 +171,7 @@
         }
 
         function isRookMoveLegal(fromRow, fromCol, toRow, toCol) {
-            if (fromRow === toRow || fromCol === toCol) return true;
-            return false;
+            return fromRow === toRow || fromCol === toCol;
         }
 
         function isKnightMoveLegal(fromRow, fromCol, toRow, toCol) {
