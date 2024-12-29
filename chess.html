@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الشطرنج</title>
+    <title>لعبة الشطرنج مع أدوار اللاعبين</title>
     <style>
         body {
             display: flex;
@@ -17,20 +18,19 @@
 
         #chessboard {
             display: grid;
-            grid-template-columns: repeat(8, 60px);
-            grid-template-rows: repeat(8, 60px);
+            grid-template-columns: repeat(8, 80px);
+            grid-template-rows: repeat(8, 80px);
             border: 2px solid black;
             margin-bottom: 20px;
         }
 
         .square {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 40px;
-            position: relative;
+            font-size: 50px;
         }
 
         .white {
@@ -42,47 +42,44 @@
             color: white;
         }
 
-        .highlight {
-            background-color: yellow;
-        }
-
         .piece {
             cursor: grab;
         }
 
-        #reset-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-top: 20px;
+        .dragging {
+            opacity: 0.5;
         }
 
-        #reset-button:hover {
-            background-color: #0056b3;
+        .timer {
+            font-size: 24px;
+            margin: 10px;
+        }
+
+        .active {
+            color: red;
+            font-weight: bold;
+        }
+
+        .highlight {
+            background-color: yellow;
         }
     </style>
 </head>
+
 <body>
+    <div class="timer" id="white-timer">الوقت المتبقي (الأبيض): 40 ثانية</div>
+    <div class="timer" id="black-timer">الوقت المتبقي (الأسود): 40 ثانية</div>
     <div id="chessboard"></div>
-    <button id="reset-button">بداية جديدة</button>
+    <button onclick="resetGame()">إعادة اللعبة</button>
 
     <script>
         const board = document.getElementById('chessboard');
-        const resetButton = document.getElementById('reset-button');
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
 
-        let currentPlayer = 'white';
-        let selectedSquare = null;
-
-        // تحميل حالة اللوحة من localStorage أو استخدام الحالة الافتراضية
-        const initialBoard = JSON.parse(localStorage.getItem('chessBoard')) || [
+        const initialBoard = [
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
             ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
             [null, null, null, null, null, null, null, null],
@@ -93,12 +90,20 @@
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
         ];
 
+        let currentPlayer = 'white';
+        let timers = { white: 40, black: 40 };
+        let timerInterval;
+        let hasMoved = false;
+
+        const whiteTimer = document.getElementById('white-timer');
+        const blackTimer = document.getElementById('black-timer');
+
         function createChessboard() {
             board.innerHTML = '';
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const square = document.createElement('div');
-                    square.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
+                    square.className = 'square ' + ((row + col) % 2 === 0 ? 'white' : 'black');
                     square.dataset.row = row;
                     square.dataset.col = col;
 
@@ -107,121 +112,225 @@
                         const pieceElement = document.createElement('div');
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
+                        pieceElement.draggable = true;
                         pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
                         square.appendChild(pieceElement);
                     }
 
-                    square.addEventListener('click', () => handleSquareClick(square));
+                    square.addEventListener('dragover', onDragOver);
+                    square.addEventListener('drop', onDrop);
                     board.appendChild(square);
                 }
             }
         }
 
-        function handleSquareClick(square) {
-            const row = parseInt(square.dataset.row);
-            const col = parseInt(square.dataset.col);
+        let draggedPiece = null;
+        let fromSquare = null;
+        let highlightedSquares = [];
+
+        board.addEventListener('dragstart', (event) => {
+            if (
+                event.target.classList.contains('piece') &&
+                event.target.dataset.player === currentPlayer &&
+                !hasMoved
+            ) {
+                draggedPiece = event.target;
+                fromSquare = event.target.parentElement;
+                draggedPiece.classList.add('dragging');
+                highlightValidMoves(draggedPiece);
+            } else {
+                event.preventDefault();
+            }
+        });
+
+        board.addEventListener('dragend', () => {
+            if (draggedPiece) {
+                draggedPiece.classList.remove('dragging');
+            }
+            draggedPiece = null;
+            fromSquare = null;
+            clearHighlightedSquares();
+        });
+
+        function highlightValidMoves(pieceElement) {
+            const row = parseInt(fromSquare.dataset.row);
+            const col = parseInt(fromSquare.dataset.col);
             const piece = initialBoard[row][col];
 
-            if (selectedSquare) {
-                if (isMoveLegal(selectedSquare, square)) {
-                    movePiece(selectedSquare, square);
-                    selectedSquare.classList.remove('highlight');
-                    selectedSquare = null;
-                    switchTurn(); // التبديل بين الأدوار بعد كل حركة
-                } else {
-                    selectedSquare.classList.remove('highlight');
-                    selectedSquare = null;
-                }
-            } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
-                selectedSquare = square;
-                square.classList.add('highlight');
+            // إزالة التمييز القديم
+            clearHighlightedSquares();
+
+            if (piece === 'P' || piece === 'p') {
+                // تمييز الحركة الممكنة للبيدق
+                highlightPawnMoves(piece, row, col);
+            } else if (piece === 'R' || piece === 'r') {
+                // تمييز الحركة الممكنة للرخ
+                highlightRookMoves(row, col);
+            } else if (piece === 'N' || piece === 'n') {
+                // تمييز الحركة الممكنة للحصان
+                highlightKnightMoves(row, col);
             }
         }
 
-        function pieceBelongsToCurrentPlayer(piece) {
-            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
-                (currentPlayer === 'black' && piece === piece.toLowerCase());
+        function highlightPawnMoves(piece, row, col) {
+            const direction = piece === 'P' ? -1 : 1;
+            if (initialBoard[row + direction] && initialBoard[row + direction][col] === null) {
+                highlightSquare(row + direction, col);
+            }
+            if (initialBoard[row + direction] && initialBoard[row + direction][col + 1] !== null &&
+                initialBoard[row + direction][col + 1].toLowerCase() !== piece.toLowerCase()) {
+                highlightSquare(row + direction, col + 1);
+            }
+            if (initialBoard[row + direction] && initialBoard[row + direction][col - 1] !== null &&
+                initialBoard[row + direction][col - 1].toLowerCase() !== piece.toLowerCase()) {
+                highlightSquare(row + direction, col - 1);
+            }
         }
 
-        function isMoveLegal(fromSquare, toSquare) {
-            const fromRow = parseInt(fromSquare.dataset.row);
-            const fromCol = parseInt(fromSquare.dataset.col);
-            const toRow = parseInt(toSquare.dataset.row);
-            const toCol = parseInt(toSquare.dataset.col);
+        function highlightRookMoves(row, col) {
+            for (let i = row + 1; i < 8; i++) {
+                if (initialBoard[i][col] !== null) break;
+                highlightSquare(i, col);
+            }
+            for (let i = row - 1; i >= 0; i--) {
+                if (initialBoard[i][col] !== null) break;
+                highlightSquare(i, col);
+            }
+            for (let i = col + 1; i < 8; i++) {
+                if (initialBoard[row][i] !== null) break;
+                highlightSquare(row, i);
+            }
+            for (let i = col - 1; i >= 0; i--) {
+                if (initialBoard[row][i] !== null) break;
+                highlightSquare(row, i);
+            }
+        }
 
-            const piece = initialBoard[fromRow][fromCol];
-            if (!piece) return false;
+        function highlightKnightMoves(row, col) {
+            const moves = [
+                [-2, -1], [-2, 1], [2, -1], [2, 1],
+                [-1, -2], [-1, 2], [1, -2], [1, 2]
+            ];
+            moves.forEach(([rOffset, cOffset]) => {
+                const newRow = row + rOffset;
+                const newCol = col + cOffset;
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    highlightSquare(newRow, newCol);
+                }
+            });
+        }
 
-            // قواعد الحركة بناءً على نوع القطعة
+        function highlightSquare(row, col) {
+            const square = document.querySelector(`.square[data-row='${row}'][data-col='${col}']`);
+            if (square) {
+                square.classList.add('highlight');
+                highlightedSquares.push(square);
+            }
+        }
+
+        function clearHighlightedSquares() {
+            highlightedSquares.forEach(square => square.classList.remove('highlight'));
+            highlightedSquares = [];
+        }
+
+        function onDragOver(event) {
+            event.preventDefault();
+        }
+
+        function onDrop(event) {
+            event.preventDefault();
+            if (draggedPiece && fromSquare) {
+                const toSquare = event.target.closest('.square');
+                if (toSquare && toSquare !== fromSquare) {
+                    const fromRow = parseInt(fromSquare.dataset.row);
+                    const fromCol = parseInt(fromSquare.dataset.col);
+                    const toRow = parseInt(toSquare.dataset.row);
+                    const toCol = parseInt(toSquare.dataset.col);
+
+                    const piece = initialBoard[fromRow][fromCol];
+                    if (isMoveLegal(piece, fromRow, fromCol, toRow, toCol)) {
+                        toSquare.innerHTML = '';
+                        toSquare.appendChild(draggedPiece);
+                        initialBoard[toRow][toCol] = piece;
+                        initialBoard[fromRow][fromCol] = null;
+                        hasMoved = true;
+                        switchTurn();
+                    }
+                }
+            }
+        }
+
+        function isMoveLegal(piece, fromRow, fromCol, toRow, toCol) {
             switch (piece.toLowerCase()) {
-                case 'p': return isPawnMoveLegal(piece, fromRow, fromCol, toRow, toCol);
-                case 'r': return isRookMoveLegal(fromRow, fromCol, toRow, toCol);
-                case 'n': return isKnightMoveLegal(fromRow, fromCol, toRow, toCol);
-                case 'b': return isBishopMoveLegal(fromRow, fromCol, toRow, toCol);
-                case 'q': return isQueenMoveLegal(fromRow, fromCol, toRow, toCol);
-                case 'k': return isKingMoveLegal(fromRow, fromCol, toRow, toCol);
-                default: return false;
+                case 'p':
+                    return isPawnMoveLegal(piece, fromRow, fromCol, toRow, toCol);
+                case 'r':
+                    return isRookMoveLegal(fromRow, fromCol, toRow, toCol);
+                case 'n':
+                    return isKnightMoveLegal(fromRow, fromCol, toRow, toCol);
+                default:
+                    return false;
             }
         }
 
         function isPawnMoveLegal(piece, fromRow, fromCol, toRow, toCol) {
             const direction = piece === 'P' ? -1 : 1;
-            if (fromCol === toCol && initialBoard[toRow][toCol] === null && toRow === fromRow + direction) return true;
-            if (Math.abs(fromCol - toCol) === 1 && toRow === fromRow + direction && initialBoard[toRow][toCol] !== null) return true;
+            if (fromCol === toCol && initialBoard[toRow][toCol] === null) {
+                if (toRow === fromRow + direction) return true;
+                if ((fromRow === 6 && piece === 'P' || fromRow === 1 && piece === 'p') && toRow === fromRow + 2 * direction) return true;
+            }
+            if (Math.abs(fromCol - toCol) === 1 && toRow === fromRow + direction && initialBoard[toRow][toCol] !== null) {
+                return true;
+            }
             return false;
         }
 
-        function isRookMoveLegal(fromRow, fromCol, toRow, toCol) {
-            return fromRow === toRow || fromCol === toCol;
+        function switchTurn() {
+            hasMoved = false;
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            updateActivePlayerDisplay();
+            startTimer();
         }
 
-        function isKnightMoveLegal(fromRow, fromCol, toRow, toCol) {
-            return (Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 1) ||
-                (Math.abs(fromRow - toRow) === 1 && Math.abs(fromCol - toCol) === 2);
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timers[currentPlayer]--;
+                if (timers[currentPlayer] <= 0) {
+                    clearInterval(timerInterval);
+                    alert(`انتهى وقت ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
+                }
+                updateTimerDisplay();
+            }, 1000);
         }
 
-        function isBishopMoveLegal(fromRow, fromCol, toRow, toCol) {
-            return Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol);
+        function updateTimerDisplay() {
+            whiteTimer.textContent = `الوقت المتبقي (الأبيض): ${timers.white} ثانية`;
+            blackTimer.textContent = `الوقت المتبقي (الأسود): ${timers.black} ثانية`;
         }
 
-        function isQueenMoveLegal(fromRow, fromCol, toRow, toCol) {
-            return isRookMoveLegal(fromRow, fromCol, toRow, toCol) ||
-                isBishopMoveLegal(fromRow, fromCol, toRow, toCol);
+        function updateActivePlayerDisplay() {
+            whiteTimer.classList.toggle('active', currentPlayer === 'white');
+            blackTimer.classList.toggle('active', currentPlayer === 'black');
         }
 
-        function isKingMoveLegal(fromRow, fromCol, toRow, toCol) {
-            return Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1;
-        }
-
-        function movePiece(fromSquare, toSquare) {
-            const fromRow = parseInt(fromSquare.dataset.row);
-            const fromCol = parseInt(fromSquare.dataset.col);
-            const toRow = parseInt(toSquare.dataset.row);
-            const toCol = parseInt(toSquare.dataset.col);
-
-            const piece = initialBoard[fromRow][fromCol];
-            initialBoard[toRow][toCol] = piece;
-            initialBoard[fromRow][fromCol] = null;
-
-            saveBoardState();
+        function resetGame() {
+            // إعادة تعيين اللوحة إلى حالتها الأصلية
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    initialBoard[row][col] = row === 1 ? 'p' : (row === 6 ? 'P' : (row === 0 || row === 7 ? ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'][col] : null));
+                }
+            }
+            currentPlayer = 'white';
+            timers = { white: 40, black: 40 };
+            clearInterval(timerInterval);
+            startTimer();
             createChessboard();
         }
 
-        function switchTurn() {
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-        }
-
-        function saveBoardState() {
-            localStorage.setItem('chessBoard', JSON.stringify(initialBoard));
-        }
-
-        // إعادة تعيين اللعبة
-        resetButton.addEventListener('click', () => {
-            localStorage.removeItem('chessBoard');
-            window.location.reload();
-        });
-
         createChessboard();
+        startTimer();
     </script>
 </body>
+
 </html>
