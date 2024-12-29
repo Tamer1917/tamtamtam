@@ -67,7 +67,7 @@
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
 
-        const initialBoard = [
+        let initialBoard = [
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
             ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
             [null, null, null, null, null, null, null, null],
@@ -77,6 +77,12 @@
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
         ];
+
+        // استرجاع حالة اللعبة من localStorage
+        const savedBoard = JSON.parse(localStorage.getItem('chessBoard'));
+        if (savedBoard) {
+            initialBoard = savedBoard;
+        }
 
         let selectedSquare = null;
 
@@ -102,6 +108,8 @@
                         pieceElement.addEventListener('touchstart', () => onPieceTouch(square));
                     }
 
+                    square.addEventListener('click', () => onSquareClick(row, col, square));
+
                     board.appendChild(square);
                 }
             }
@@ -116,6 +124,33 @@
             // تحديد المربع الحالي
             selectedSquare = square;
             selectedSquare.classList.add('highlight');
+        }
+
+        function onSquareClick(row, col, square) {
+            if (selectedSquare) {
+                const fromRow = parseInt(selectedSquare.dataset.row);
+                const fromCol = parseInt(selectedSquare.dataset.col);
+
+                // تنفيذ الحركة إذا كان المربع فارغًا أو الهدف قانوني
+                if (initialBoard[fromRow][fromCol] && (fromRow !== row || fromCol !== col)) {
+                    initialBoard[row][col] = initialBoard[fromRow][fromCol];
+                    initialBoard[fromRow][fromCol] = null;
+
+                    // حفظ الحالة في localStorage
+                    localStorage.setItem('chessBoard', JSON.stringify(initialBoard));
+
+                    // إعادة إنشاء اللوحة
+                    createChessboard();
+                }
+
+                // إزالة التمييز
+                selectedSquare.classList.remove('highlight');
+                selectedSquare = null;
+            } else {
+                // تحديد المربع إذا لم يكن هناك مربع محدد مسبقًا
+                selectedSquare = square;
+                square.classList.add('highlight');
+            }
         }
 
         createChessboard();
