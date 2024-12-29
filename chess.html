@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الشطرنج مع أدوار اللاعبين</title>
+    <title>لعبة الشطرنج</title>
     <style>
         body {
             display: flex;
@@ -21,15 +21,12 @@
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
             width: 90vw;
-            /* عرض اللوحة 90% من عرض الشاشة */
             height: 90vw;
-            /* ارتفاع اللوحة لتكون مربعة */
             max-width: 600px;
-            /* الحد الأقصى للعرض */
             max-height: 600px;
-            /* الحد الأقصى للارتفاع */
             border: 2px solid black;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .square {
@@ -37,7 +34,7 @@
             justify-content: center;
             align-items: center;
             font-size: calc(4vw);
-            /* حجم النص ديناميكي */
+            position: relative;
         }
 
         .white {
@@ -51,43 +48,19 @@
 
         .piece {
             cursor: grab;
+            position: absolute;
         }
 
         .dragging {
             opacity: 0.5;
         }
-
-        .timer {
-            font-size: calc(2.5vw);
-            margin: 10px;
-            text-align: center;
-        }
-
-        .active {
-            color: red;
-            font-weight: bold;
-        }
-
-        @media (min-width: 600px) {
-            .square {
-                font-size: 50px;
-                /* حجم ثابت للشاشات الكبيرة */
-            }
-
-            .timer {
-                font-size: 24px;
-            }
-        }
     </style>
 </head>
 
 <body>
-    <div class="timer" id="white-timer">الوقت المتبقي (الأبيض): 40 ثانية</div>
-    <div class="timer" id="black-timer">الوقت المتبقي (الأسود): 40 ثانية</div>
     <div id="chessboard"></div>
 
     <script>
-        // (باقي الكود كما هو)
         const board = document.getElementById('chessboard');
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
@@ -105,13 +78,8 @@
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
         ];
 
-        let currentPlayer = 'white';
-        let timers = { white: 40, black: 40 };
-        let timerInterval;
-        let hasMoved = false;
-
-        const whiteTimer = document.getElementById('white-timer');
-        const blackTimer = document.getElementById('black-timer');
+        let draggedPiece = null;
+        let originalPosition = null;
 
         function createChessboard() {
             board.innerHTML = '';
@@ -127,24 +95,53 @@
                         const pieceElement = document.createElement('div');
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
-                        pieceElement.draggable = true;
-                        pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
+                        pieceElement.dataset.row = row;
+                        pieceElement.dataset.col = col;
                         square.appendChild(pieceElement);
+
+                        pieceElement.addEventListener('touchstart', onTouchStart);
+                        pieceElement.addEventListener('touchmove', onTouchMove);
+                        pieceElement.addEventListener('touchend', onTouchEnd);
                     }
 
-                    square.addEventListener('dragover', onDragOver);
-                    square.addEventListener('drop', onDrop);
                     board.appendChild(square);
                 }
             }
         }
 
-        function onDragOver(event) {
-            event.preventDefault();
+        function onTouchStart(event) {
+            const touch = event.touches[0];
+            draggedPiece = event.target;
+            originalPosition = { x: touch.clientX, y: touch.clientY };
+            draggedPiece.classList.add('dragging');
         }
 
-        function onDrop(event) {
-            event.preventDefault();
+        function onTouchMove(event) {
+            if (!draggedPiece) return;
+
+            const touch = event.touches[0];
+            const dx = touch.clientX - originalPosition.x;
+            const dy = touch.clientY - originalPosition.y;
+
+            draggedPiece.style.transform = `translate(${dx}px, ${dy}px)`;
+        }
+
+        function onTouchEnd(event) {
+            if (!draggedPiece) return;
+
+            const touch = event.changedTouches[0];
+            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetSquare = targetElement?.closest('.square');
+
+            if (targetSquare && targetSquare !== draggedPiece.parentElement) {
+                targetSquare.innerHTML = '';
+                targetSquare.appendChild(draggedPiece);
+            }
+
+            draggedPiece.style.transform = '';
+            draggedPiece.classList.remove('dragging');
+            draggedPiece = null;
+            originalPosition = null;
         }
 
         createChessboard();
