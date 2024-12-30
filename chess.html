@@ -9,13 +9,13 @@
             display: grid;
             grid-template-columns: repeat(8, 60px);
             grid-template-rows: repeat(8, 60px);
-            width: 440px;
-            height: 440px;
+            width: 480px;
+            height: 480px;
             margin: 50px auto;
         }
         .square {
-            width: 55px;
-            height: 55px;
+            width: 60px;
+            height: 60px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -88,16 +88,6 @@
         let blackTimeLeft = 40;
         let timer;
 
-        function resetGame() {
-            currentPlayer = 'white';
-            selectedSquare = null;
-            whiteTimeLeft = 40;
-            blackTimeLeft = 40;
-            resetTimers();
-            renderBoard();
-            turnIndicator.textContent = 'دور اللاعب: الأبيض';
-        }
-
         function createBoard() {
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
@@ -128,13 +118,13 @@
             timer = setInterval(() => {
                 if (currentPlayer === 'white') {
                     whiteTimeLeft--;
-                    whiteTimerElement.textContent = `الوقت الأبيض: ${whiteTimeLeft}`;
+                    whiteTimerElement.textContent = الوقت الأبيض: ${whiteTimeLeft};
                     if (whiteTimeLeft <= 0) {
                         changeTurn();
                     }
                 } else {
                     blackTimeLeft--;
-                    blackTimerElement.textContent = `الوقت الأسود: ${blackTimeLeft}`;
+                    blackTimerElement.textContent = الوقت الأسود: ${blackTimeLeft};
                     if (blackTimeLeft <= 0) {
                         changeTurn();
                     }
@@ -149,8 +139,8 @@
         function resetTimers() {
             whiteTimeLeft = 40;
             blackTimeLeft = 40;
-            whiteTimerElement.textContent = `الوقت الأبيض: 40`;
-            blackTimerElement.textContent = `الوقت الأسود: 40`;
+            whiteTimerElement.textContent = الوقت الأبيض: 40;
+            blackTimerElement.textContent = الوقت الأسود: 40;
         }
 
         function onSquareClick(row, col) {
@@ -184,7 +174,7 @@
         }
 
         function getSquareElement(row, col) {
-            return document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+            return document.querySelector(.square[data-row="${row}"][data-col="${col}"]);
         }
 
         function isPieceOfCurrentPlayer(piece) {
@@ -206,7 +196,7 @@
 
         function changeTurn() {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
+            turnIndicator.textContent = دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'};
             resetTimers();
             stopTimer();
             startTimer();
@@ -228,8 +218,7 @@
             });
         }
 
-        // Reset the game state when the page is loaded
-        resetGame();
+        createBoard();
         startTimer();
     </script>
 </body>
