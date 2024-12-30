@@ -34,15 +34,22 @@
             margin-top: 20px;
             font-size: 20px;
         }
+        .timer {
+            font-size: 20px;
+            margin-top: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="turn-indicator" id="turnIndicator">دور اللاعب: الأبيض</div>
+    <div class="timer" id="timer">الوقت المتبقي: 40</div>
     <div class="board" id="board"></div>
 
     <script>
         const board = document.getElementById('board');
         const turnIndicator = document.getElementById('turnIndicator');
+        const timerElement = document.getElementById('timer');
         const initialBoard = [
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -61,6 +68,8 @@
 
         let currentPlayer = 'white';  // يحدد دور اللاعب الحالي
         let selectedSquare = null;    // لتخزين المربع الذي تم اختياره
+        let timer;                   // لتخزين عداد الوقت
+        let timeLeft = 40;           // الوقت المتبقي لكل لاعب (بالثواني)
 
         function createBoard() {
             for (let row = 0; row < 8; row++) {
@@ -86,6 +95,25 @@
                     board.appendChild(square);
                 }
             }
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `الوقت المتبقي: ${timeLeft}`;
+                if (timeLeft <= 0) {
+                    changeTurn();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+        }
+
+        function resetTimer() {
+            timeLeft = 40;
+            timerElement.textContent = `الوقت المتبقي: 40`;
         }
 
         function onSquareClick(row, col) {
@@ -143,6 +171,9 @@
         function changeTurn() {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
+            resetTimer(); // إعادة ضبط العداد
+            stopTimer();  // إيقاف العداد السابق
+            startTimer(); // بدء العداد للاعب الآخر
         }
 
         function renderBoard() {
@@ -161,7 +192,9 @@
             });
         }
 
+        // بداية اللعبة
         createBoard();
+        startTimer(); // بدء العد التنازلي للاعب الأول
     </script>
 </body>
 </html>
