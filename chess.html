@@ -207,7 +207,73 @@
         }
 
         function isValidMove(fromRow, fromCol, toRow, toCol) {
-            return true; // للحفاظ على بساطة الكود
+            const piece = initialBoard[fromRow][fromCol];
+            const targetPiece = initialBoard[toRow][toCol];
+            const pieceType = piece.toLowerCase();
+
+            if (piece === '') return false;
+
+            // التأكد من أن الهدف ليس قطعة بنفس اللون
+            if (targetPiece && (targetPiece === targetPiece.toUpperCase()) === (piece === piece.toUpperCase())) {
+                return false;
+            }
+
+            switch (pieceType) {
+                case 'p': // الجنود
+                    return isPawnMove(fromRow, fromCol, toRow, toCol, piece);
+                case 'r': // الرخ
+                    return isRookMove(fromRow, fromCol, toRow, toCol);
+                case 'n': // الفارس
+                    return isKnightMove(fromRow, fromCol, toRow, toCol);
+                case 'b': // الفيل
+                    return isBishopMove(fromRow, fromCol, toRow, toCol);
+                case 'q': // الملكة
+                    return isQueenMove(fromRow, fromCol, toRow, toCol);
+                case 'k': // الملك
+                    return isKingMove(fromRow, fromCol, toRow, toCol);
+                default:
+                    return false;
+            }
+        }
+
+        // هنا يجب إضافة قواعد كل قطعة للتحرك
+        function isPawnMove(fromRow, fromCol, toRow, toCol, piece) {
+            // منطق حركة الجندي
+            if (piece === 'P') {
+                return fromRow - toRow === 1 && fromCol === toCol && !initialBoard[toRow][toCol];
+            } else if (piece === 'p') {
+                return toRow - fromRow === 1 && fromCol === toCol && !initialBoard[toRow][toCol];
+            }
+            return false;
+        }
+
+        function isRookMove(fromRow, fromCol, toRow, toCol) {
+            // يمكن للرخ التحرك أفقيًا أو عموديًا
+            if (fromRow === toRow || fromCol === toCol) {
+                return true;
+            }
+            return false;
+        }
+
+        function isKnightMove(fromRow, fromCol, toRow, toCol) {
+            // حركة الفارس تكون على شكل L
+            return (Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 1) ||
+                   (Math.abs(fromRow - toRow) === 1 && Math.abs(fromCol - toCol) === 2);
+        }
+
+        function isBishopMove(fromRow, fromCol, toRow, toCol) {
+            // يمكن للفيل التحرك بشكل قطري
+            return Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol);
+        }
+
+        function isQueenMove(fromRow, fromCol, toRow, toCol) {
+            // يمكن للملكة التحرك كالرخ والفيل معًا
+            return isRookMove(fromRow, fromCol, toRow, toCol) || isBishopMove(fromRow, fromCol, toRow, toCol);
+        }
+
+        function isKingMove(fromRow, fromCol, toRow, toCol) {
+            // يمكن للملك التحرك مربعًا واحدًا في أي اتجاه
+            return Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1;
         }
 
         function movePiece(fromRow, fromCol, toRow, toCol) {
