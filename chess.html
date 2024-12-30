@@ -34,22 +34,33 @@
             margin-top: 20px;
             font-size: 20px;
         }
+        .timer-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
         .timer {
             font-size: 20px;
-            margin-top: 10px;
-            text-align: center;
+            margin: 0 20px;
+            padding: 5px 10px;
+            border: 2px solid #000;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <div class="turn-indicator" id="turnIndicator">دور اللاعب: الأبيض</div>
-    <div class="timer" id="timer">الوقت المتبقي: 40</div>
+    <div class="timer-container">
+        <div class="timer" id="whiteTimer">الوقت الأبيض: 40</div>
+        <div class="timer" id="blackTimer">الوقت الأسود: 40</div>
+    </div>
     <div class="board" id="board"></div>
 
     <script>
         const board = document.getElementById('board');
         const turnIndicator = document.getElementById('turnIndicator');
-        const timerElement = document.getElementById('timer');
+        const whiteTimerElement = document.getElementById('whiteTimer');
+        const blackTimerElement = document.getElementById('blackTimer');
         const initialBoard = [
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -68,8 +79,9 @@
 
         let currentPlayer = 'white';  // يحدد دور اللاعب الحالي
         let selectedSquare = null;    // لتخزين المربع الذي تم اختياره
+        let whiteTimeLeft = 40;       // الوقت المتبقي للاعب الأبيض
+        let blackTimeLeft = 40;       // الوقت المتبقي للاعب الأسود
         let timer;                   // لتخزين عداد الوقت
-        let timeLeft = 40;           // الوقت المتبقي لكل لاعب (بالثواني)
 
         function createBoard() {
             for (let row = 0; row < 8; row++) {
@@ -99,10 +111,18 @@
 
         function startTimer() {
             timer = setInterval(() => {
-                timeLeft--;
-                timerElement.textContent = `الوقت المتبقي: ${timeLeft}`;
-                if (timeLeft <= 0) {
-                    changeTurn();
+                if (currentPlayer === 'white') {
+                    whiteTimeLeft--;
+                    whiteTimerElement.textContent = `الوقت الأبيض: ${whiteTimeLeft}`;
+                    if (whiteTimeLeft <= 0) {
+                        changeTurn();
+                    }
+                } else {
+                    blackTimeLeft--;
+                    blackTimerElement.textContent = `الوقت الأسود: ${blackTimeLeft}`;
+                    if (blackTimeLeft <= 0) {
+                        changeTurn();
+                    }
                 }
             }, 1000);
         }
@@ -111,9 +131,11 @@
             clearInterval(timer);
         }
 
-        function resetTimer() {
-            timeLeft = 40;
-            timerElement.textContent = `الوقت المتبقي: 40`;
+        function resetTimers() {
+            whiteTimeLeft = 40;
+            blackTimeLeft = 40;
+            whiteTimerElement.textContent = `الوقت الأبيض: 40`;
+            blackTimerElement.textContent = `الوقت الأسود: 40`;
         }
 
         function onSquareClick(row, col) {
@@ -171,7 +193,7 @@
         function changeTurn() {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
-            resetTimer(); // إعادة ضبط العداد
+            resetTimers(); // إعادة ضبط العداد
             stopTimer();  // إيقاف العداد السابق
             startTimer(); // بدء العداد للاعب الآخر
         }
