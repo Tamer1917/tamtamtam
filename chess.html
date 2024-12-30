@@ -29,9 +29,6 @@
             touch-action: none;
             position: absolute;
         }
-        .highlight {
-            background-color: rgba(0, 255, 0, 0.5);
-        }
     </style>
 </head>
 <body>
@@ -53,14 +50,6 @@
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
-        };
-
-        const directions = {
-            'rook': [[1, 0], [0, 1], [-1, 0], [0, -1]],  // الأفقي والعمودي
-            'bishop': [[1, 1], [-1, -1], [1, -1], [-1, 1]],  // القطري
-            'queen': [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]],  // الملكة تجمع بين حركة الفيل والقلعة
-            'king': [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]],  // الملك يتحرك مربعًا واحدًا في أي اتجاه
-            'knight': [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]  // الفارس يتحرك بشكل حرف "L"
         };
 
         function createBoard() {
@@ -98,7 +87,6 @@
             draggedPiece = event.target;
             draggedPiece.style.zIndex = 1000;
             event.preventDefault();
-            highlightValidMoves(draggedPiece);
         }
 
         function onPieceTouchMove(event) {
@@ -111,103 +99,23 @@
         function onPieceTouchEnd(event) {
             if (draggedPiece) {
                 const targetSquare = document.elementFromPoint(event.changedTouches[0].pageX, event.changedTouches[0].pageY);
-                if (targetSquare && targetSquare.classList.contains('square') && targetSquare.classList.contains('highlight')) {
+                if (targetSquare && targetSquare.classList.contains('square')) {
                     const targetRow = targetSquare.dataset.row;
                     const targetCol = targetSquare.dataset.col;
                     draggedPiece.dataset.row = targetRow;
                     draggedPiece.dataset.col = targetCol;
                     targetSquare.appendChild(draggedPiece);
                 } else {
+                    // If no valid square, reset the piece's position
                     const originalSquare = document.querySelector(`[data-row="${draggedPiece.dataset.row}"][data-col="${draggedPiece.dataset.col}"]`);
                     originalSquare.appendChild(draggedPiece);
                 }
                 draggedPiece.style.zIndex = '';
                 draggedPiece.style.left = '';
                 draggedPiece.style.top = '';
-                clearHighlights();
                 draggedPiece = null;
             }
             event.preventDefault();
-        }
-
-        function highlightValidMoves(piece) {
-            const row = parseInt(piece.dataset.row);
-            const col = parseInt(piece.dataset.col);
-            const pieceType = piece.textContent;
-
-            const possibleMoves = getPossibleMoves(pieceType, row, col);
-
-            possibleMoves.forEach(move => {
-                const targetSquare = document.querySelector(`[data-row="${move[0]}"][data-col="${move[1]}"]`);
-                if (targetSquare) {
-                    targetSquare.classList.add('highlight');
-                }
-            });
-        }
-
-        function clearHighlights() {
-            const highlightedSquares = document.querySelectorAll('.highlight');
-            highlightedSquares.forEach(square => square.classList.remove('highlight'));
-        }
-
-        function getPossibleMoves(pieceType, row, col) {
-            const moves = [];
-
-            if (pieceType.toLowerCase() === 'p') {
-                const direction = pieceType === 'p' ? 1 : -1;
-                if (isValidMove(row + direction, col)) moves.push([row + direction, col]);
-                if (isValidMove(row + direction, col - 1)) moves.push([row + direction, col - 1]);
-                if (isValidMove(row + direction, col + 1)) moves.push([row + direction, col + 1]);
-            }
-
-            if (pieceType.toLowerCase() === 'r' || pieceType.toLowerCase() === 'q') {
-                addSlidingMoves(moves, directions['rook'], row, col);
-            }
-            if (pieceType.toLowerCase() === 'b' || pieceType.toLowerCase() === 'q') {
-                addSlidingMoves(moves, directions['bishop'], row, col);
-            }
-            if (pieceType.toLowerCase() === 'k') {
-                addSingleMove(moves, directions['king'], row, col);
-            }
-            if (pieceType.toLowerCase() === 'n') {
-                addKnightMoves(moves, directions['knight'], row, col);
-            }
-
-            return moves;
-        }
-
-        function addSlidingMoves(moves, directions, row, col) {
-            directions.forEach(dir => {
-                let r = row, c = col;
-                while (true) {
-                    r += dir[0];
-                    c += dir[1];
-                    if (isValidMove(r, c)) {
-                        moves.push([r, c]);
-                        if (board[r][c] !== '') break;  // Stop if there is a piece
-                    } else {
-                        break;
-                    }
-                }
-            });
-        }
-
-        function addSingleMove(moves, directions, row, col) {
-            directions.forEach(dir => {
-                const r = row + dir[0], c = col + dir[1];
-                if (isValidMove(r, c)) moves.push([r, c]);
-            });
-        }
-
-        function addKnightMoves(moves, directions, row, col) {
-            directions.forEach(dir => {
-                const r = row + dir[0], c = col + dir[1];
-                if (isValidMove(r, c)) moves.push([r, c]);
-            });
-        }
-
-        function isValidMove(row, col) {
-            return row >= 0 && row < 8 && col >= 0 && col < 8;
         }
 
         createBoard();
