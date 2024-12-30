@@ -47,7 +47,7 @@
         }
 
         .piece {
-            cursor: grab;
+            cursor: pointer;
             user-select: none;
         }
 
@@ -127,56 +127,146 @@
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
                         pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
-                        pieceElement.setAttribute('draggable', true);
-                        pieceElement.addEventListener('dragstart', (e) => handleDragStart(e, pieceElement));
-                        pieceElement.addEventListener('dragend', (e) => handleDragEnd(e, pieceElement));
+                        pieceElement.addEventListener('click', (e) => handlePieceClick(e, square));
                         square.appendChild(pieceElement);
                     }
 
-                    square.addEventListener('dragover', (e) => handleDragOver(e));
-                    square.addEventListener('drop', (e) => handleDrop(e, square));
                     board.appendChild(square);
                 }
             }
         }
 
-        function handleDragStart(e, pieceElement) {
-            selectedPiece = pieceElement;
-            e.dataTransfer.setData('text/plain', pieceElement.textContent); // Set the dragged piece as data
-            selectedPiece.classList.add('highlight');
-        }
-
-        function handleDragEnd(e, pieceElement) {
-            pieceElement.classList.remove('highlight');
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();  // Allow drop
-        }
-
-        function handleDrop(e, square) {
-            e.preventDefault();
+        function handlePieceClick(e, square) {
             const row = parseInt(square.dataset.row);
             const col = parseInt(square.dataset.col);
+            const piece = initialBoard[row][col];
 
-            if (selectedPiece) {
-                const fromRow = selectedPiece.parentElement.dataset.row;
-                const fromCol = selectedPiece.parentElement.dataset.col;
-
-                if (isMoveLegal(fromRow, fromCol, row, col)) {
-                    movePiece(fromRow, fromCol, row, col);
+            if (selectedSquare) {
+                // If there's a selected square, check if the move is legal
+                if (isMoveLegal(selectedSquare, square)) {
+                    movePiece(selectedSquare, square);
+                    clearSelection();
+                } else {
+                    clearSelection();
                 }
-                selectedPiece.classList.remove('highlight');
-                selectedPiece = null;
+            } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
+                selectedSquare = square;
+                highlightValidMoves(piece, square);
             }
         }
 
-        function isMoveLegal(fromRow, fromCol, toRow, toCol) {
-            // Add logic to determine if a move is legal.
-            return true; // Placeholder for the real logic.
+        function pieceBelongsToCurrentPlayer(piece) {
+            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
+                (currentPlayer === 'black' && piece === piece.toLowerCase());
         }
 
-        function movePiece(fromRow, fromCol, toRow, toCol) {
+        function highlightValidMoves(piece, square) {
+            const row = parseInt(square.dataset.row);
+            const col = parseInt(square.dataset.col);
+            const validMoves = getValidMoves(piece, row, col);
+
+            validMoves.forEach(move => {
+                const targetSquare = document.querySelector(`[data-row="${move.row}"][data-col="${move.col}"]`);
+                targetSquare.classList.add('highlight');
+            });
+        }
+
+        function clearSelection() {
+            selectedSquare.classList.remove('highlight');
+            selectedSquare = null;
+        }
+
+        function getValidMoves(piece, row, col) {
+            const moves = [];
+            switch (piece.toLowerCase()) {
+                case 'p':
+                    // Pawn movement: forward one square (only valid if empty)
+                    const direction = piece === 'p' ? 1 : -1; // Black pawns move down, white move up
+                    if (initialBoard[row + direction] && initialBoard[row + direction][col] === null) {
+                        moves.push({ row: row + direction, col: col });
+                    }
+                    break;
+                case 'r':
+                    // Rook movement: horizontal and vertical
+                    moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
+                    moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+                    break;
+                case 'n':
+                    // Knight movement: L-shaped
+                    moves.push(...getKnightMoves(row, col));
+                    break;
+                case 'b':
+                    // Bishop movement: diagonal
+                    moves.push(...getDiagonalMoves(row, col));
+                    break;
+                case 'q':
+                    // Queen movement: horizontal, vertical, and diagonal
+                    moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
+                    moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+                    moves.push(...getDiagonalMoves(row, col));
+                    break;
+                case 'k':
+                    // King movement: one square in any direction
+                    moves.push(...getKingMoves(row, col));
+                    break;
+            }
+            return moves;
+        }
+
+        function getStraightLineMoves(row, col, rowDelta, colDelta) {
+            const moves = [];
+            for (let i = 1; i < 8; i++) {
+                const newRow = row + i * rowDelta;
+                const newCol = col + i * colDelta;
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    if (initialBoard[newRow][newCol] === null) {
+                        moves.push({ row: newRow, col: newCol });
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            return moves;
+        }
+
+        function getDiagonalMoves(row, col) {
+            const moves = [];
+            moves.push(...getStraightLineMoves(row, col, 1, 1)); // Top-right diagonal
+            moves.push(...getStraightLineMoves(row, col, 1, -1)); // Top-left diagonal
+            moves.push(...getStraightLineMoves(row, col, -1, 1)); // Bottom-right diagonal
+            moves.push(...getStraightLineMoves(row, col, -1, -1)); // Bottom-left diagonal
+            return moves;
+        }
+
+        function getKnightMoves(row, col) {
+            const knightMoves = [
+                { row: row + 2, col: col + 1 }, { row: row + 2, col: col - 1 },
+                { row: row - 2, col: col + 1 }, { row: row - 2, col: col - 1 },
+                { row: row + 1, col: col + 2 }, { row: row + 1, col: col - 2 },
+                { row: row - 1, col: col + 2 }, { row: row - 1, col: col - 2 }
+            ];
+
+            return knightMoves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
+        }
+
+        function getKingMoves(row, col) {
+            const kingMoves = [
+                { row: row + 1, col: col }, { row: row - 1, col: col },
+                { row: row, col: col + 1 }, { row: row, col: col - 1 },
+                { row: row + 1, col: col + 1 }, { row: row + 1, col: col - 1 },
+                { row: row - 1, col: col + 1 }, { row: row - 1, col: col - 1 }
+            ];
+            return kingMoves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
+        }
+
+        function movePiece(fromSquare, toSquare) {
+            const fromRow = parseInt(fromSquare.dataset.row);
+            const fromCol = parseInt(fromSquare.dataset.col);
+            const toRow = parseInt(toSquare.dataset.row);
+            const toCol = parseInt(toSquare.dataset.col);
+
             initialBoard[toRow][toCol] = initialBoard[fromRow][fromCol];
             initialBoard[fromRow][fromCol] = null;
             createChessboard();
