@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>لعبة الشطرنج</title>
     <style>
+        /* تم الحفاظ على الأنماط الأساسية */
         .board {
             display: grid;
             grid-template-columns: repeat(8, 60px);
@@ -48,8 +49,21 @@
             border-radius: 5px;
             min-width: 100px;
             text-align: center;
-            color: white; /* النص باللون الأبيض */
-            background-color: #333; /* خلفية داكنة لتوفير تباين جيد */
+            color: white; 
+            background-color: #333;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .control-button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
         }
     </style>
 </head>
@@ -60,12 +74,19 @@
         <div class="timer" id="blackTimer">الوقت الأسود: 40</div>
     </div>
     <div class="board" id="board"></div>
+    <div class="controls">
+        <button class="control-button" id="undoButton">التراجع عن الحركة</button>
+        <button class="control-button" id="resetButton">إعادة تعيين</button>
+    </div>
 
     <script>
         const board = document.getElementById('board');
         const turnIndicator = document.getElementById('turnIndicator');
         const whiteTimerElement = document.getElementById('whiteTimer');
         const blackTimerElement = document.getElementById('blackTimer');
+        const undoButton = document.getElementById('undoButton');
+        const resetButton = document.getElementById('resetButton');
+
         const initialBoard = [
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -87,6 +108,7 @@
         let whiteTimeLeft = 40;
         let blackTimeLeft = 40;
         let timer;
+        let history = []; // لتخزين الحركات السابقة
 
         function createBoard() {
             for (let row = 0; row < 8; row++) {
@@ -149,6 +171,7 @@
                 const [prevRow, prevCol] = selectedSquare;
                 if (isValidMove(prevRow, prevCol, row, col)) {
                     movePiece(prevRow, prevCol, row, col);
+                    history.push({fromRow: prevRow, fromCol: prevCol, toRow: row, toCol: col, piece: initialBoard[prevRow][prevCol]});
                     changeTurn();
                 }
                 deselectSquare();
@@ -217,6 +240,24 @@
                 }
             });
         }
+
+        undoButton.addEventListener('click', () => {
+            if (history.length > 0) {
+                const lastMove = history.pop();
+                initialBoard[lastMove.fromRow][lastMove.fromCol] = lastMove.piece;
+                initialBoard[lastMove.toRow][lastMove.toCol] = '';
+                renderBoard();
+                changeTurn(); // التبديل بين اللاعبين
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            history = [];
+            initialBoard = [...initialBoard]; // إعادة تعيين اللوحة
+            renderBoard();
+            resetTimers();
+            changeTurn();
+        });
 
         createBoard();
         startTimer();
