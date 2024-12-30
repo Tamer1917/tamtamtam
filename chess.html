@@ -118,13 +118,13 @@
             timer = setInterval(() => {
                 if (currentPlayer === 'white') {
                     whiteTimeLeft--;
-                    whiteTimerElement.textContent = الوقت الأبيض: ${whiteTimeLeft};
+                    whiteTimerElement.textContent = `الوقت الأبيض: ${whiteTimeLeft}`;
                     if (whiteTimeLeft <= 0) {
                         changeTurn();
                     }
                 } else {
                     blackTimeLeft--;
-                    blackTimerElement.textContent = الوقت الأسود: ${blackTimeLeft};
+                    blackTimerElement.textContent = `الوقت الأسود: ${blackTimeLeft}`;
                     if (blackTimeLeft <= 0) {
                         changeTurn();
                     }
@@ -139,8 +139,8 @@
         function resetTimers() {
             whiteTimeLeft = 40;
             blackTimeLeft = 40;
-            whiteTimerElement.textContent = الوقت الأبيض: 40;
-            blackTimerElement.textContent = الوقت الأسود: 40;
+            whiteTimerElement.textContent = `الوقت الأبيض: 40`;
+            blackTimerElement.textContent = `الوقت الأسود: 40`;
         }
 
         function onSquareClick(row, col) {
@@ -174,7 +174,7 @@
         }
 
         function getSquareElement(row, col) {
-            return document.querySelector(.square[data-row="${row}"][data-col="${col}"]);
+            return document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
         }
 
         function isPieceOfCurrentPlayer(piece) {
@@ -196,7 +196,7 @@
 
         function changeTurn() {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            turnIndicator.textContent = دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'};
+            turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
             resetTimers();
             stopTimer();
             startTimer();
