@@ -88,6 +88,16 @@
         let blackTimeLeft = 40;
         let timer;
 
+        function resetGame() {
+            currentPlayer = 'white';
+            selectedSquare = null;
+            whiteTimeLeft = 40;
+            blackTimeLeft = 40;
+            resetTimers();
+            renderBoard();
+            turnIndicator.textContent = 'دور اللاعب: الأبيض';
+        }
+
         function createBoard() {
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
@@ -218,7 +228,8 @@
             });
         }
 
-        createBoard();
+        // Reset the game state when the page is loaded
+        resetGame();
         startTimer();
     </script>
 </body>
