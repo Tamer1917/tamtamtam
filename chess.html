@@ -5,316 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لعبة الشطرنج</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            margin: 0;
-        }
-
-        #chessboard {
+        .board {
             display: grid;
-            grid-template-columns: repeat(8, 48px);
-            grid-template-rows: repeat(8, 48px);
-            border: 2px solid black;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            width: 480px;
+            height: 480px;
+            margin: 50px auto;
         }
-
         .square {
-            width: 48px;
-            height: 48px;
+            width: 60px;
+            height: 60px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px;
             position: relative;
         }
-
-        .white {
-            background-color: #eee;
-        }
-
-        .black {
-            background-color: #555;
-            color: white;
-        }
-
-        .highlight {
-            background-color: yellow;
-        }
-
+        .black { background-color: #8B4513; }
+        .white { background-color: #f0d9b5; }
         .piece {
-            cursor: pointer;
+            font-size: 36px;
             user-select: none;
-        }
-
-        #reset-button {
-            padding: 8px 16px;
-            font-size: 14px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-
-        #reset-button:hover {
-            background-color: #0056b3;
-        }
-
-        @media (max-width: 768px) {
-            #chessboard {
-                grid-template-columns: repeat(8, 40px);
-                grid-template-rows: repeat(8, 40px);
-            }
-
-            .square {
-                width: 40px;
-                height: 40px;
-                font-size: 28px;
-            }
-
-            #reset-button {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
+            touch-action: none;
+            position: absolute;
         }
     </style>
 </head>
 <body>
-    <div id="chessboard"></div>
-    <button id="reset-button">بداية جديدة</button>
+    <div class="board" id="board"></div>
 
     <script>
-        const board = document.getElementById('chessboard');
-        const resetButton = document.getElementById('reset-button');
+        const board = document.getElementById('board');
+        const initialBoard = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+        ];
+
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
 
-        let currentPlayer = 'white';
-        let selectedPiece = null;
-        let selectedSquare = null;
-
-        const initialBoard = JSON.parse(localStorage.getItem('chessBoard')) || [
-            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
-            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
-        ];
-
-        function createChessboard() {
-            board.innerHTML = '';
+        function createBoard() {
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const square = document.createElement('div');
-                    square.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
+                    square.classList.add('square');
+                    square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
                     square.dataset.row = row;
                     square.dataset.col = col;
 
-                    const piece = initialBoard[row][col];
-                    if (piece) {
-                        const pieceElement = document.createElement('div');
-                        pieceElement.textContent = pieces[piece];
-                        pieceElement.className = 'piece';
-                        pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
-                        pieceElement.addEventListener('click', (e) => handlePieceClick(e, square));
-                        square.appendChild(pieceElement);
+                    if (initialBoard[row][col]) {
+                        const piece = document.createElement('span');
+                        piece.classList.add('piece');
+                        piece.textContent = pieces[initialBoard[row][col]];
+                        piece.dataset.row = row;
+                        piece.dataset.col = col;
+                        piece.draggable = true;
+
+                        piece.addEventListener('touchstart', onPieceTouchStart);
+                        piece.addEventListener('touchmove', onPieceTouchMove);
+                        piece.addEventListener('touchend', onPieceTouchEnd);
+
+                        square.appendChild(piece);
                     }
 
-                    square.addEventListener('click', () => handleSquareClick(square));
                     board.appendChild(square);
                 }
             }
         }
 
-        function handlePieceClick(e, square) {
-            const row = parseInt(square.dataset.row);
-            const col = parseInt(square.dataset.col);
-            const piece = initialBoard[row][col];
+        let draggedPiece = null;
 
-            if (selectedSquare) {
-                if (isMoveLegal(selectedSquare, square)) {
-                    movePiece(selectedSquare, square);
-                    clearSelection();
+        function onPieceTouchStart(event) {
+            draggedPiece = event.target;
+            draggedPiece.style.zIndex = 1000;
+            event.preventDefault();
+        }
+
+        function onPieceTouchMove(event) {
+            if (draggedPiece) {
+                draggedPiece.style.left = event.touches[0].pageX - 30 + 'px';
+                draggedPiece.style.top = event.touches[0].pageY - 30 + 'px';
+            }
+        }
+
+        function onPieceTouchEnd(event) {
+            if (draggedPiece) {
+                const targetSquare = document.elementFromPoint(event.changedTouches[0].pageX, event.changedTouches[0].pageY);
+                if (targetSquare && targetSquare.classList.contains('square')) {
+                    const targetRow = targetSquare.dataset.row;
+                    const targetCol = targetSquare.dataset.col;
+                    draggedPiece.dataset.row = targetRow;
+                    draggedPiece.dataset.col = targetCol;
+                    targetSquare.appendChild(draggedPiece);
                 } else {
-                    clearSelection();
+                    // If no valid square, reset the piece's position
+                    const originalSquare = document.querySelector(`[data-row="${draggedPiece.dataset.row}"][data-col="${draggedPiece.dataset.col}"]`);
+                    originalSquare.appendChild(draggedPiece);
                 }
-            } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
-                selectedSquare = square;
-                highlightValidMoves(piece, square);
+                draggedPiece.style.zIndex = '';
+                draggedPiece.style.left = '';
+                draggedPiece.style.top = '';
+                draggedPiece = null;
             }
+            event.preventDefault();
         }
 
-        function handleSquareClick(square) {
-            if (selectedSquare) {
-                if (isMoveLegal(selectedSquare, square)) {
-                    movePiece(selectedSquare, square);
-                    clearSelection();
-                } else {
-                    clearSelection();
-                }
-            }
-        }
-
-        function pieceBelongsToCurrentPlayer(piece) {
-            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
-                (currentPlayer === 'black' && piece === piece.toLowerCase());
-        }
-
-        function highlightValidMoves(piece, square) {
-            const row = parseInt(square.dataset.row);
-            const col = parseInt(square.dataset.col);
-            const validMoves = getValidMoves(piece, row, col);
-
-            validMoves.forEach(move => {
-                const targetSquare = document.querySelector(`[data-row="${move.row}"][data-col="${move.col}"]`);
-                targetSquare.classList.add('highlight');
-            });
-        }
-
-        function clearSelection() {
-            if (selectedSquare) {
-                selectedSquare.classList.remove('highlight');
-            }
-            selectedSquare = null;
-        }
-
-        function getValidMoves(piece, row, col) {
-            const moves = [];
-            switch (piece.toLowerCase()) {
-                case 'p':
-                    moves.push(...getPawnMoves(piece, row, col));
-                    break;
-                case 'r':
-                    moves.push(...getRookMoves(row, col));
-                    break;
-                case 'n':
-                    moves.push(...getKnightMoves(row, col));
-                    break;
-                case 'b':
-                    moves.push(...getBishopMoves(row, col));
-                    break;
-                case 'q':
-                    moves.push(...getQueenMoves(row, col));
-                    break;
-                case 'k':
-                    moves.push(...getKingMoves(row, col));
-                    break;
-            }
-            return moves;
-        }
-
-        function getPawnMoves(piece, row, col) {
-            const moves = [];
-            const direction = (piece === 'p') ? 1 : -1; // White moves up, black moves down
-            const targetRow = row + direction;
-
-            if (targetRow >= 0 && targetRow < 8) {
-                if (initialBoard[targetRow][col] === null) {
-                    moves.push({ row: targetRow, col: col });
-                }
-            }
-
-            return moves;
-        }
-
-        function getRookMoves(row, col) {
-            const moves = [];
-            moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
-            moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
-            return moves;
-        }
-
-        function getBishopMoves(row, col) {
-            const moves = [];
-            moves.push(...getDiagonalMoves(row, col));
-            return moves;
-        }
-
-        function getQueenMoves(row, col) {
-            const moves = [];
-            moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
-            moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
-            moves.push(...getDiagonalMoves(row, col));
-            return moves;
-        }
-
-        function getKingMoves(row, col) {
-            const moves = [
-                { row: row + 1, col: col }, { row: row - 1, col: col },
-                { row: row, col: col + 1 }, { row: row, col: col - 1 },
-                { row: row + 1, col: col + 1 }, { row: row + 1, col: col - 1 },
-                { row: row - 1, col: col + 1 }, { row: row - 1, col: col - 1 }
-            ];
-
-            return moves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
-        }
-
-        function getStraightLineMoves(row, col, rowDelta, colDelta) {
-            const moves = [];
-            for (let i = 1; i < 8; i++) {
-                const newRow = row + i * rowDelta;
-                const newCol = col + i * colDelta;
-                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
-                    if (initialBoard[newRow][newCol] === null) {
-                        moves.push({ row: newRow, col: newCol });
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
-            return moves;
-        }
-
-        function getDiagonalMoves(row, col) {
-            const moves = [];
-            moves.push(...getStraightLineMoves(row, col, 1, 1)); // Top-right diagonal
-            moves.push(...getStraightLineMoves(row, col, 1, -1)); // Top-left diagonal
-            moves.push(...getStraightLineMoves(row, col, -1, 1)); // Bottom-right diagonal
-            moves.push(...getStraightLineMoves(row, col, -1, -1)); // Bottom-left diagonal
-            return moves;
-        }
-
-        function isMoveLegal(fromSquare, toSquare) {
-            const fromRow = parseInt(fromSquare.dataset.row);
-            const fromCol = parseInt(fromSquare.dataset.col);
-            const toRow = parseInt(toSquare.dataset.row);
-            const toCol = parseInt(toSquare.dataset.col);
-            const piece = initialBoard[fromRow][fromCol];
-
-            const validMoves = getValidMoves(piece, fromRow, fromCol);
-            return validMoves.some(move => move.row === toRow && move.col === toCol);
-        }
-
-        function movePiece(fromSquare, toSquare) {
-            const fromRow = parseInt(fromSquare.dataset.row);
-            const fromCol = parseInt(fromSquare.dataset.col);
-            const toRow = parseInt(toSquare.dataset.row);
-            const toCol = parseInt(toSquare.dataset.col);
-
-            initialBoard[toRow][toCol] = initialBoard[fromRow][fromCol];
-            initialBoard[fromRow][fromCol] = null;
-            createChessboard();
-        }
-
-        resetButton.addEventListener('click', () => {
-            localStorage.removeItem('chessBoard');
-            window.location.reload();
-        });
-
-        createChessboard();
+        createBoard();
     </script>
 </body>
 </html>
