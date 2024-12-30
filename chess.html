@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>لعبة الشطرنج</title>
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(8, 60px);
@@ -12,7 +22,10 @@
             width: 480px;
             height: 480px;
             margin: 50px auto;
+            transform: scale(0.8); /* تقليص العرض بنسبة 20% */
+            transform-origin: top center; /* تحديد نقطة التحجيم من الأعلى */
         }
+
         .square {
             width: 60px;
             height: 60px;
@@ -21,25 +34,30 @@
             align-items: center;
             cursor: pointer;
         }
+
         .black { background-color: #8B4513; }
         .white { background-color: #f0d9b5; }
         .piece {
             font-size: 36px;
         }
+
         .selected {
             border: 3px solid yellow;
         }
+
         .turn-indicator {
             text-align: center;
             margin-top: 20px;
             font-size: 20px;
         }
+
         .timer-container {
             display: flex;
             justify-content: center;
             margin-top: 20px;
             flex-wrap: wrap;
         }
+
         .timer {
             font-size: 18px;
             margin: 0 10px;
@@ -48,8 +66,8 @@
             border-radius: 5px;
             min-width: 100px;
             text-align: center;
-            color: white; /* النص باللون الأبيض */
-            background-color: #333; /* خلفية داكنة لتوفير تباين جيد */
+            color: white;
+            background-color: #333;
         }
     </style>
 </head>
