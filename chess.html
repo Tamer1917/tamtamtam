@@ -48,6 +48,7 @@
 
         .piece {
             cursor: grab;
+            touch-action: none; /* Prevent default touch actions */
         }
 
         #reset-button {
@@ -79,6 +80,8 @@
 
         let currentPlayer = 'white';
         let selectedSquare = null;
+        let activePiece = null;
+        let placeholder = null;
 
         const initialBoard = JSON.parse(localStorage.getItem('chessBoard')) || [
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
@@ -100,4 +103,16 @@
                     square.dataset.row = row;
                     square.dataset.col = col;
 
-                    const piece
+                    const piece = initialBoard[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.textContent = pieces[piece];
+                        pieceElement.className = 'piece';
+                        pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
+                        square.appendChild(pieceElement);
+
+                        // Add touch event listeners
+                        pieceElement.addEventListener('touchstart', (e) => handleTouchStart(e, pieceElement));
+                        pieceElement.addEventListener('touchmove', handleTouchMove);
+                        pieceElement.addEventListener('touchend', handleTouchEnd);
+                   
