@@ -79,6 +79,10 @@
                     }
 
                     square.addEventListener('click', () => onSquareClick(row, col));
+                    square.addEventListener('touchstart', (e) => {
+                        e.preventDefault();  // منع تفاعل اللمس الافتراضي
+                        onSquareClick(row, col);
+                    });
                     board.appendChild(square);
                 }
             }
