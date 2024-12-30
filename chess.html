@@ -131,6 +131,7 @@
                         square.appendChild(pieceElement);
                     }
 
+                    square.addEventListener('click', () => handleSquareClick(square));
                     board.appendChild(square);
                 }
             }
@@ -142,7 +143,6 @@
             const piece = initialBoard[row][col];
 
             if (selectedSquare) {
-                // If there's a selected square, check if the move is legal
                 if (isMoveLegal(selectedSquare, square)) {
                     movePiece(selectedSquare, square);
                     clearSelection();
@@ -152,6 +152,17 @@
             } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
                 selectedSquare = square;
                 highlightValidMoves(piece, square);
+            }
+        }
+
+        function handleSquareClick(square) {
+            if (selectedSquare) {
+                if (isMoveLegal(selectedSquare, square)) {
+                    movePiece(selectedSquare, square);
+                    clearSelection();
+                } else {
+                    clearSelection();
+                }
             }
         }
 
@@ -172,7 +183,9 @@
         }
 
         function clearSelection() {
-            selectedSquare.classList.remove('highlight');
+            if (selectedSquare) {
+                selectedSquare.classList.remove('highlight');
+            }
             selectedSquare = null;
         }
 
@@ -180,37 +193,71 @@
             const moves = [];
             switch (piece.toLowerCase()) {
                 case 'p':
-                    // Pawn movement: forward one square (only valid if empty)
-                    const direction = piece === 'p' ? 1 : -1; // Black pawns move down, white move up
-                    if (initialBoard[row + direction] && initialBoard[row + direction][col] === null) {
-                        moves.push({ row: row + direction, col: col });
-                    }
+                    moves.push(...getPawnMoves(piece, row, col));
                     break;
                 case 'r':
-                    // Rook movement: horizontal and vertical
-                    moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
-                    moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+                    moves.push(...getRookMoves(row, col));
                     break;
                 case 'n':
-                    // Knight movement: L-shaped
                     moves.push(...getKnightMoves(row, col));
                     break;
                 case 'b':
-                    // Bishop movement: diagonal
-                    moves.push(...getDiagonalMoves(row, col));
+                    moves.push(...getBishopMoves(row, col));
                     break;
                 case 'q':
-                    // Queen movement: horizontal, vertical, and diagonal
-                    moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
-                    moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
-                    moves.push(...getDiagonalMoves(row, col));
+                    moves.push(...getQueenMoves(row, col));
                     break;
                 case 'k':
-                    // King movement: one square in any direction
                     moves.push(...getKingMoves(row, col));
                     break;
             }
             return moves;
+        }
+
+        function getPawnMoves(piece, row, col) {
+            const moves = [];
+            const direction = (piece === 'p') ? 1 : -1; // White moves up, black moves down
+            const targetRow = row + direction;
+
+            if (targetRow >= 0 && targetRow < 8) {
+                if (initialBoard[targetRow][col] === null) {
+                    moves.push({ row: targetRow, col: col });
+                }
+            }
+
+            return moves;
+        }
+
+        function getRookMoves(row, col) {
+            const moves = [];
+            moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
+            moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+            return moves;
+        }
+
+        function getBishopMoves(row, col) {
+            const moves = [];
+            moves.push(...getDiagonalMoves(row, col));
+            return moves;
+        }
+
+        function getQueenMoves(row, col) {
+            const moves = [];
+            moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
+            moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+            moves.push(...getDiagonalMoves(row, col));
+            return moves;
+        }
+
+        function getKingMoves(row, col) {
+            const moves = [
+                { row: row + 1, col: col }, { row: row - 1, col: col },
+                { row: row, col: col + 1 }, { row: row, col: col - 1 },
+                { row: row + 1, col: col + 1 }, { row: row + 1, col: col - 1 },
+                { row: row - 1, col: col + 1 }, { row: row - 1, col: col - 1 }
+            ];
+
+            return moves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
         }
 
         function getStraightLineMoves(row, col, rowDelta, colDelta) {
@@ -240,25 +287,15 @@
             return moves;
         }
 
-        function getKnightMoves(row, col) {
-            const knightMoves = [
-                { row: row + 2, col: col + 1 }, { row: row + 2, col: col - 1 },
-                { row: row - 2, col: col + 1 }, { row: row - 2, col: col - 1 },
-                { row: row + 1, col: col + 2 }, { row: row + 1, col: col - 2 },
-                { row: row - 1, col: col + 2 }, { row: row - 1, col: col - 2 }
-            ];
+        function isMoveLegal(fromSquare, toSquare) {
+            const fromRow = parseInt(fromSquare.dataset.row);
+            const fromCol = parseInt(fromSquare.dataset.col);
+            const toRow = parseInt(toSquare.dataset.row);
+            const toCol = parseInt(toSquare.dataset.col);
+            const piece = initialBoard[fromRow][fromCol];
 
-            return knightMoves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
-        }
-
-        function getKingMoves(row, col) {
-            const kingMoves = [
-                { row: row + 1, col: col }, { row: row - 1, col: col },
-                { row: row, col: col + 1 }, { row: row, col: col - 1 },
-                { row: row + 1, col: col + 1 }, { row: row + 1, col: col - 1 },
-                { row: row - 1, col: col + 1 }, { row: row - 1, col: col - 1 }
-            ];
-            return kingMoves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
+            const validMoves = getValidMoves(piece, fromRow, fromCol);
+            return validMoves.some(move => move.row === toRow && move.col === toCol);
         }
 
         function movePiece(fromSquare, toSquare) {
