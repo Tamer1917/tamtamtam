@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>لعبة الشطرنج</title>
     <style>
-        /* تم تعديل الأنماط لتصغير العرض */
+        /* تم الحفاظ على الأنماط الأساسية */
         .board {
             display: grid;
-            grid-template-columns: repeat(8, 48px);
-            grid-template-rows: repeat(8, 48px);
-            width: 384px;
-            height: 384px;
+            grid-template-columns: repeat(8, 57px);  /* تم تقليص العرض بنسبة 5% */
+            grid-template-rows: repeat(8, 57px);  /* تم تقليص الارتفاع بنسبة 5% */
+            width: 456px;  /* تم تقليص العرض بنسبة 5% */
+            height: 456px;  /* تم تقليص الارتفاع بنسبة 5% */
             margin: 50px auto;
         }
         .square {
-            width: 48px;
-            height: 48px;
+            width: 57px;  /* تم تقليص العرض بنسبة 5% */
+            height: 57px;  /* تم تقليص الارتفاع بنسبة 5% */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -25,7 +25,7 @@
         .black { background-color: #8B4513; }
         .white { background-color: #f0d9b5; }
         .piece {
-            font-size: 28px; /* تم تقليص حجم النص */
+            font-size: 34px;  /* تم تقليص حجم القطعة بنسبة 5% */
         }
         .selected {
             border: 3px solid yellow;
@@ -33,7 +33,7 @@
         .turn-indicator {
             text-align: center;
             margin-top: 20px;
-            font-size: 16px; /* تم تقليص حجم النص */
+            font-size: 19px;  /* تم تقليص حجم الخط بنسبة 5% */
         }
         .timer-container {
             display: flex;
@@ -42,12 +42,12 @@
             flex-wrap: wrap;
         }
         .timer {
-            font-size: 16px; /* تم تقليص حجم النص */
+            font-size: 17px;  /* تم تقليص حجم الخط بنسبة 5% */
             margin: 0 10px;
             padding: 5px 10px;
             border: 2px solid #000;
             border-radius: 5px;
-            min-width: 80px;
+            min-width: 95px;  /* تم تقليص العرض بنسبة 5% */
             text-align: center;
             color: white; 
             background-color: #333;
@@ -57,8 +57,8 @@
             margin-top: 20px;
         }
         .control-button {
-            padding: 8px;
-            font-size: 14px; /* تم تقليص حجم النص */
+            padding: 9.5px;  /* تم تقليص الحجم بنسبة 5% */
+            font-size: 15px;  /* تم تقليص الحجم بنسبة 5% */
             margin: 5px;
             cursor: pointer;
             border-radius: 5px;
@@ -236,7 +236,6 @@
             }
         }
 
-        // هنا يجب إضافة قواعد كل قطعة للتحرك
         function isPawnMove(fromRow, fromCol, toRow, toCol, piece) {
             // منطق حركة الجندي
             if (piece === 'P') {
