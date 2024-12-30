@@ -38,16 +38,18 @@
             display: flex;
             justify-content: center;
             margin-top: 20px;
-            flex-wrap: wrap; /* لضمان أن العناصر لا تخرج عن العرض */
+            flex-wrap: wrap;
         }
         .timer {
-            font-size: 18px; /* تقليل حجم النص قليلاً */
+            font-size: 18px;
             margin: 0 10px;
             padding: 5px 10px;
             border: 2px solid #000;
             border-radius: 5px;
-            min-width: 100px; /* تحديد الحد الأدنى للعرض */
+            min-width: 100px;
             text-align: center;
+            color: white; /* النص باللون الأبيض */
+            background-color: #333; /* خلفية داكنة لتوفير تباين جيد */
         }
     </style>
 </head>
@@ -80,11 +82,11 @@
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
 
-        let currentPlayer = 'white';  // يحدد دور اللاعب الحالي
-        let selectedSquare = null;    // لتخزين المربع الذي تم اختياره
-        let whiteTimeLeft = 40;       // الوقت المتبقي للاعب الأبيض
-        let blackTimeLeft = 40;       // الوقت المتبقي للاعب الأسود
-        let timer;                   // لتخزين عداد الوقت
+        let currentPlayer = 'white';
+        let selectedSquare = null;
+        let whiteTimeLeft = 40;
+        let blackTimeLeft = 40;
+        let timer;
 
         function createBoard() {
             for (let row = 0; row < 8; row++) {
@@ -104,7 +106,7 @@
 
                     square.addEventListener('click', () => onSquareClick(row, col));
                     square.addEventListener('touchstart', (e) => {
-                        e.preventDefault();  // منع تفاعل اللمس الافتراضي
+                        e.preventDefault();
                         onSquareClick(row, col);
                     });
                     board.appendChild(square);
@@ -182,7 +184,6 @@
         }
 
         function isValidMove(fromRow, fromCol, toRow, toCol) {
-            // هنا يمكن إضافة قاعدة التحقق من صحة الحركة
             return true; // للحفاظ على بساطة الكود
         }
 
@@ -196,9 +197,9 @@
         function changeTurn() {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
-            resetTimers(); // إعادة ضبط العداد
-            stopTimer();  // إيقاف العداد السابق
-            startTimer(); // بدء العداد للاعب الآخر
+            resetTimers();
+            stopTimer();
+            startTimer();
         }
 
         function renderBoard() {
@@ -217,9 +218,8 @@
             });
         }
 
-        // بداية اللعبة
         createBoard();
-        startTimer(); // بدء العد التنازلي للاعب الأول
+        startTimer();
     </script>
 </body>
 </html>
