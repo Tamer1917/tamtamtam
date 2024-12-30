@@ -21,6 +21,12 @@ function isValidMove(fromRow, fromCol, toRow, toCol) {
                 if (toRow === fromRow + 1 && (toCol === fromCol - 1 || toCol === fromCol + 1) && targetPiece) {
                     return true; // أخذ الجندي الأبيض
                 }
+                // تحقق من الأخذ بالتجاوز
+                if (toRow === fromRow + 1 && (toCol === fromCol - 1 || toCol === fromCol + 1) && !targetPiece) {
+                    if (isEnPassant(fromRow, fromCol, toRow, toCol)) {
+                        return true; // الأخذ بالتجاوز
+                    }
+                }
             } else {
                 if (fromRow === 6 && toRow === fromRow - 2 && fromCol === toCol && !initialBoard[toRow][toCol]) {
                     return true; // حركة أولى للجندي الأسود
@@ -32,13 +38,22 @@ function isValidMove(fromRow, fromCol, toRow, toCol) {
                 if (toRow === fromRow - 1 && (toCol === fromCol - 1 || toCol === fromCol + 1) && targetPiece) {
                     return true; // أخذ الجندي الأسود
                 }
+                // تحقق من الأخذ بالتجاوز
+                if (toRow === fromRow - 1 && (toCol === fromCol - 1 || toCol === fromCol + 1) && !targetPiece) {
+                    if (isEnPassant(fromRow, fromCol, toRow, toCol)) {
+                        return true; // الأخذ بالتجاوز
+                    }
+                }
             }
             break;
 
         case 'r': // القلعة
             // القلعة تتحرك أفقيًا أو عموديًا فقط
             if (fromRow === toRow || fromCol === toCol) {
-                return true;
+                // التأكد من عدم وجود قطع في الطريق
+                if (isPathClear(fromRow, fromCol, toRow, toCol)) {
+                    return true;
+                }
             }
             break;
 
@@ -54,14 +69,20 @@ function isValidMove(fromRow, fromCol, toRow, toCol) {
         case 'b': // الفيل
             // الفيل يتحرك قطريًا فقط
             if (Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol)) {
-                return true;
+                // التأكد من عدم وجود قطع في الطريق
+                if (isPathClear(fromRow, fromCol, toRow, toCol)) {
+                    return true;
+                }
             }
             break;
 
         case 'q': // الملكة
             // الملكة تتحرك أفقيًا، عموديًا، أو قطريًا
             if (fromRow === toRow || fromCol === toCol || Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol)) {
-                return true;
+                // التأكد من عدم وجود قطع في الطريق
+                if (isPathClear(fromRow, fromCol, toRow, toCol)) {
+                    return true;
+                }
             }
             break;
 
@@ -76,4 +97,36 @@ function isValidMove(fromRow, fromCol, toRow, toCol) {
             return false;
     }
     return false;
+}
+
+function isEnPassant(fromRow, fromCol, toRow, toCol) {
+    // يجب أن يتحقق من الأخذ بالتجاوز فقط في حالة الجندي الذي لم يتحرك من مكانه الأول
+    // يجب أن يكون الجندي المنافس قد تحرك مربعين للأمام
+    const direction = (currentPlayer === 'white') ? 1 : -1; // تحديد الاتجاه بناءً على اللاعب الحالي
+    if (Math.abs(toRow - fromRow) === direction && Math.abs(fromCol - toCol) === 1) {
+        const opponentPawnRow = (currentPlayer === 'white') ? toRow - direction : toRow + direction;
+        const opponentPawnCol = toCol;
+        if (initialBoard[opponentPawnRow][opponentPawnCol] === (currentPlayer === 'white' ? 'p' : 'P')) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function isPathClear(fromRow, fromCol, toRow, toCol) {
+    // هذه الدالة تتحقق من أن الطريق بين القطعة والهدف خالية من القطع
+    const rowStep = (toRow - fromRow) === 0 ? 0 : (toRow - fromRow) > 0 ? 1 : -1;
+    const colStep = (toCol - fromCol) === 0 ? 0 : (toCol - fromCol) > 0 ? 1 : -1;
+
+    let currentRow = fromRow + rowStep;
+    let currentCol = fromCol + colStep;
+
+    while (currentRow !== toRow || currentCol !== toCol) {
+        if (initialBoard[currentRow][currentCol]) {
+            return false; // هناك قطعة في الطريق
+        }
+        currentRow += rowStep;
+        currentCol += colStep;
+    }
+    return true;
 }
