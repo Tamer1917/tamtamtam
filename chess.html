@@ -48,6 +48,7 @@
 
         .piece {
             cursor: grab;
+            user-select: none;
         }
 
         #reset-button {
@@ -89,7 +90,6 @@
     <button id="reset-button">بداية جديدة</button>
 
     <script>
-        // نفس الكود البرمجي دون تعديل
         const board = document.getElementById('chessboard');
         const resetButton = document.getElementById('reset-button');
         const pieces = {
@@ -98,6 +98,7 @@
         };
 
         let currentPlayer = 'white';
+        let selectedPiece = null;
         let selectedSquare = null;
 
         const initialBoard = JSON.parse(localStorage.getItem('chessBoard')) || [
@@ -126,50 +127,59 @@
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
                         pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
+                        pieceElement.setAttribute('draggable', true);
+                        pieceElement.addEventListener('dragstart', (e) => handleDragStart(e, pieceElement));
+                        pieceElement.addEventListener('dragend', (e) => handleDragEnd(e, pieceElement));
                         square.appendChild(pieceElement);
                     }
 
-                    square.addEventListener('click', () => handleSquareClick(square));
+                    square.addEventListener('dragover', (e) => handleDragOver(e));
+                    square.addEventListener('drop', (e) => handleDrop(e, square));
                     board.appendChild(square);
                 }
             }
         }
 
-        function handleSquareClick(square) {
+        function handleDragStart(e, pieceElement) {
+            selectedPiece = pieceElement;
+            e.dataTransfer.setData('text/plain', pieceElement.textContent); // Set the dragged piece as data
+            selectedPiece.classList.add('highlight');
+        }
+
+        function handleDragEnd(e, pieceElement) {
+            pieceElement.classList.remove('highlight');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();  // Allow drop
+        }
+
+        function handleDrop(e, square) {
+            e.preventDefault();
             const row = parseInt(square.dataset.row);
             const col = parseInt(square.dataset.col);
-            const piece = initialBoard[row][col];
 
-            if (selectedSquare) {
-                if (isMoveLegal(selectedSquare, square)) {
-                    movePiece(selectedSquare, square);
-                    selectedSquare.classList.remove('highlight');
-                    selectedSquare = null;
-                } else {
-                    selectedSquare.classList.remove('highlight');
-                    selectedSquare = null;
+            if (selectedPiece) {
+                const fromRow = selectedPiece.parentElement.dataset.row;
+                const fromCol = selectedPiece.parentElement.dataset.col;
+
+                if (isMoveLegal(fromRow, fromCol, row, col)) {
+                    movePiece(fromRow, fromCol, row, col);
                 }
-            } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
-                selectedSquare = square;
-                square.classList.add('highlight');
+                selectedPiece.classList.remove('highlight');
+                selectedPiece = null;
             }
         }
 
-        function pieceBelongsToCurrentPlayer(piece) {
-            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
-                (currentPlayer === 'black' && piece === piece.toLowerCase());
+        function isMoveLegal(fromRow, fromCol, toRow, toCol) {
+            // Add logic to determine if a move is legal.
+            return true; // Placeholder for the real logic.
         }
 
-        function isMoveLegal(fromSquare, toSquare) {
-            // ...
-        }
-
-        function movePiece(fromSquare, toSquare) {
-            // ...
-        }
-
-        function saveBoardState() {
-            // ...
+        function movePiece(fromRow, fromCol, toRow, toCol) {
+            initialBoard[toRow][toCol] = initialBoard[fromRow][fromCol];
+            initialBoard[fromRow][fromCol] = null;
+            createChessboard();
         }
 
         resetButton.addEventListener('click', () => {
