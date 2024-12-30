@@ -49,8 +49,6 @@
         .piece {
             cursor: pointer;
             user-select: none;
-            touch-action: none; /* Prevent default touch actions */
-            position: absolute; /* Make it absolute for dragging */
         }
 
         #reset-button {
@@ -100,8 +98,8 @@
         };
 
         let currentPlayer = 'white';
+        let selectedPiece = null;
         let selectedSquare = null;
-        let draggedPiece = null;
 
         const initialBoard = JSON.parse(localStorage.getItem('chessBoard')) || [
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
@@ -129,9 +127,7 @@
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
                         pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
-                        // Add touch and mouse event listeners for dragging
-                        pieceElement.addEventListener('touchstart', (e) => handleTouchStart(e, square));
-                        pieceElement.addEventListener('mousedown', (e) => handleMouseDown(e, square));
+                        pieceElement.addEventListener('click', (e) => handlePieceClick(e, square));
                         square.appendChild(pieceElement);
                     }
 
@@ -141,79 +137,154 @@
             }
         }
 
-        function handleTouchStart(e, square) {
-            e.preventDefault(); // Prevent default touch behavior
-            handleDragStart(e.target, square);
-        }
+        function handlePieceClick(e, square) {
+            const row = parseInt(square.dataset.row);
+            const col = parseInt(square.dataset.col);
+            const piece = initialBoard[row][col];
 
-        function handleMouseDown(e, square) {
-            e.preventDefault(); // Prevent default mouse behavior
-            handleDragStart(e.target, square);
-        }
-
-        function handleDragStart(pieceElement, square) {
-            draggedPiece = pieceElement;
-            selectedSquare = square;
-            pieceElement.style.position = 'absolute'; // Set piece to absolute for dragging
-            pieceElement.style.zIndex = '1000'; // Bring piece to front
-            document.body.appendChild(pieceElement); // Move it to the body for dragging
-
-            const moveAt = (pageX, pageY) => {
-                pieceElement.style.left = pageX - pieceElement.offsetWidth / 2 + 'px';
-                pieceElement.style.top = pageY - pieceElement.offsetHeight / 2 + 'px';
-            };
-
-            const onMouseMove = (event) => {
-                moveAt(event.pageX, event.pageY);
-            };
-
-            const onTouchMove = (event) => {
-                moveAt(event.touches[0].pageX, event.touches[0].pageY);
-            };
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('touchmove', onTouchMove, { passive: false });
-
-            const onMouseUp = () => {
-                dropPiece(square);
-                cleanup();
-            };
-
-            const onTouchEnd = () => {
-                dropPiece(square);
-                cleanup();
-            };
-
-            document.addEventListener('mouseup', onMouseUp);
-            document.addEventListener('touchend', onTouchEnd, { passive: false });
-        }
-
-        function dropPiece(targetSquare) {
             if (selectedSquare) {
-                if (isMoveLegal(selectedSquare, targetSquare)) {
-                    movePiece(selectedSquare, targetSquare);
+                if (isMoveLegal(selectedSquare, square)) {
+                    movePiece(selectedSquare, square);
+                    clearSelection();
+                } else {
+                    clearSelection();
                 }
+            } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
+                selectedSquare = square;
+                highlightValidMoves(piece, square);
             }
-        }
-
-        function cleanup() {
-            if (draggedPiece) {
-                document.body.removeChild(draggedPiece);
-                draggedPiece = null;
-            }
-            selectedSquare = null;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            document.removeEventListener('touchmove', onTouchMove);
-            document.removeEventListener('touchend', onTouchEnd);
         }
 
         function handleSquareClick(square) {
             if (selectedSquare) {
                 if (isMoveLegal(selectedSquare, square)) {
                     movePiece(selectedSquare, square);
+                    clearSelection();
+                } else {
+                    clearSelection();
                 }
             }
+        }
+
+        function pieceBelongsToCurrentPlayer(piece) {
+            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
+                (currentPlayer === 'black' && piece === piece.toLowerCase());
+        }
+
+        function highlightValidMoves(piece, square) {
+            const row = parseInt(square.dataset.row);
+            const col = parseInt(square.dataset.col);
+            const validMoves = getValidMoves(piece, row, col);
+
+            validMoves.forEach(move => {
+                const targetSquare = document.querySelector(`[data-row="${move.row}"][data-col="${move.col}"]`);
+                targetSquare.classList.add('highlight');
+            });
+        }
+
+        function clearSelection() {
+            if (selectedSquare) {
+                selectedSquare.classList.remove('highlight');
+            }
+            selectedSquare = null;
+        }
+
+        function getValidMoves(piece, row, col) {
+            const moves = [];
+            switch (piece.toLowerCase()) {
+                case 'p':
+                    moves.push(...getPawnMoves(piece, row, col));
+                    break;
+                case 'r':
+                    moves.push(...getRookMoves(row, col));
+                    break;
+                case 'n':
+                    moves.push(...getKnightMoves(row, col));
+                    break;
+                case 'b':
+                    moves.push(...getBishopMoves(row, col));
+                    break;
+                case 'q':
+                    moves.push(...getQueenMoves(row, col));
+                    break;
+                case 'k':
+                    moves.push(...getKingMoves(row, col));
+                    break;
+            }
+            return moves;
+        }
+
+        function getPawnMoves(piece, row, col) {
+            const moves = [];
+            const direction = (piece === 'p') ? 1 : -1; // White moves up, black moves down
+            const targetRow = row + direction;
+
+            if (targetRow >= 0 && targetRow < 8) {
+                if (initialBoard[targetRow][col] === null) {
+                    moves.push({ row: targetRow, col: col });
+                }
+            }
+
+            return moves;
+        }
+
+        function getRookMoves(row, col) {
+            const moves = [];
+            moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
+            moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+            return moves;
+        }
+
+        function getBishopMoves(row, col) {
+            const moves = [];
+            moves.push(...getDiagonalMoves(row, col));
+            return moves;
+        }
+
+        function getQueenMoves(row, col) {
+            const moves = [];
+            moves.push(...getStraightLineMoves(row, col, 1, 0)); // Vertical
+            moves.push(...getStraightLineMoves(row, col, 0, 1)); // Horizontal
+            moves.push(...getDiagonalMoves(row, col));
+            return moves;
+        }
+
+        function getKingMoves(row, col) {
+            const moves = [
+                { row: row + 1, col: col }, { row: row - 1, col: col },
+                { row: row, col: col + 1 }, { row: row, col: col - 1 },
+                { row: row + 1, col: col + 1 }, { row: row + 1, col: col - 1 },
+                { row: row - 1, col: col + 1 }, { row: row - 1, col: col - 1 }
+            ];
+
+            return moves.filter(move => move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8);
+        }
+
+        function getStraightLineMoves(row, col, rowDelta, colDelta) {
+            const moves = [];
+            for (let i = 1; i < 8; i++) {
+                const newRow = row + i * rowDelta;
+                const newCol = col + i * colDelta;
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    if (initialBoard[newRow][newCol] === null) {
+                        moves.push({ row: newRow, col: newCol });
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            return moves;
+        }
+
+        function getDiagonalMoves(row, col) {
+            const moves = [];
+            moves.push(...getStraightLineMoves(row, col, 1, 1)); // Top-right diagonal
+            moves.push(...getStraightLineMoves(row, col, 1, -1)); // Top-left diagonal
+            moves.push(...getStraightLineMoves(row, col, -1, 1)); // Bottom-right diagonal
+            moves.push(...getStraightLineMoves(row, col, -1, -1)); // Bottom-left diagonal
+            return moves;
         }
 
         function isMoveLegal(fromSquare, toSquare) {
