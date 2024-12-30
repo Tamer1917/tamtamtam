@@ -30,6 +30,7 @@
             justify-content: center;
             align-items: center;
             font-size: 36px;
+            position: relative;
         }
 
         .white {
@@ -65,7 +66,7 @@
     </style>
 </head>
 <body>
-    <div id="chessboard"></div>
+    <div id="chessboard" role="grid"></div>
     <button id="reset-button">بداية جديدة</button>
 
     <script>
@@ -99,91 +100,4 @@
                     square.dataset.row = row;
                     square.dataset.col = col;
 
-                    const piece = initialBoard[row][col];
-                    if (piece) {
-                        const pieceElement = document.createElement('div');
-                        pieceElement.textContent = pieces[piece];
-                        pieceElement.className = 'piece';
-                        pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
-                        square.appendChild(pieceElement);
-                    }
-
-                    square.addEventListener('click', () => handleSquareClick(square));
-                    board.appendChild(square);
-                }
-            }
-        }
-
-        function handleSquareClick(square) {
-            const row = parseInt(square.dataset.row);
-            const col = parseInt(square.dataset.col);
-            const piece = initialBoard[row][col];
-
-            if (selectedSquare) {
-                if (isMoveLegal(selectedSquare, square)) {
-                    movePiece(selectedSquare, square);
-                    selectedSquare.classList.remove('highlight');
-                    selectedSquare = null;
-                } else {
-                    selectedSquare.classList.remove('highlight');
-                    selectedSquare = null;
-                }
-            } else if (piece && pieceBelongsToCurrentPlayer(piece)) {
-                selectedSquare = square;
-                square.classList.add('highlight');
-            }
-        }
-
-        function pieceBelongsToCurrentPlayer(piece) {
-            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
-                (currentPlayer === 'black' && piece === piece.toLowerCase());
-        }
-
-        function isMoveLegal(fromSquare, toSquare) {
-            const fromRow = parseInt(fromSquare.dataset.row);
-            const fromCol = parseInt(fromSquare.dataset.col);
-            const toRow = parseInt(toSquare.dataset.row);
-            const toCol = parseInt(toSquare.dataset.col);
-
-            const piece = initialBoard[fromRow][fromCol];
-            const targetPiece = initialBoard[toRow][toCol];
-
-            switch (piece.toLowerCase()) {
-                case 'p': return isPawnMoveLegal(piece, fromRow, fromCol, toRow, toCol, targetPiece);
-                case 'r': return isRookMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
-                case 'n': return isKnightMoveLegal(fromRow, fromCol, toRow, toCol);
-                case 'b': return isBishopMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
-                case 'q': return isQueenMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
-                case 'k': return isKingMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
-                default: return false;
-            }
-        }
-
-        function movePiece(fromSquare, toSquare) {
-            const fromRow = parseInt(fromSquare.dataset.row);
-            const fromCol = parseInt(fromSquare.dataset.col);
-            const toRow = parseInt(toSquare.dataset.row);
-            const toCol = parseInt(toSquare.dataset.col);
-
-            const piece = initialBoard[fromRow][fromCol];
-            initialBoard[toRow][toCol] = piece;
-            initialBoard[fromRow][fromCol] = null;
-
-            saveBoardState();
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            createChessboard();
-        }
-
-        function saveBoardState() {
-            localStorage.setItem('chessBoard', JSON.stringify(initialBoard));
-        }
-
-        resetButton.addEventListener('click', () => {
-            localStorage.removeItem('chessBoard');
-            window.location.reload();
-        });
-
-        createChessboard();
-    </script>
-</body>
-</html>
+                    const piece
