@@ -42,13 +42,13 @@
             color: white;
         }
 
-        .highlight {
-            background-color: yellow;
-        }
-
         .piece {
             cursor: grab;
-            touch-action: none; /* Prevent default touch actions */
+            touch-action: none;
+        }
+
+        .piece:active {
+            cursor: grabbing;
         }
 
         #reset-button {
@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <div id="chessboard" role="grid"></div>
+    <div id="chessboard"></div>
     <button id="reset-button">بداية جديدة</button>
 
     <script>
@@ -79,9 +79,6 @@
         };
 
         let currentPlayer = 'white';
-        let selectedSquare = null;
-        let activePiece = null;
-        let placeholder = null;
 
         const initialBoard = JSON.parse(localStorage.getItem('chessBoard')) || [
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
@@ -102,6 +99,8 @@
                     square.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
                     square.dataset.row = row;
                     square.dataset.col = col;
+                    square.ondrop = handleDrop;
+                    square.ondragover = allowDrop;
 
                     const piece = initialBoard[row][col];
                     if (piece) {
@@ -109,10 +108,71 @@
                         pieceElement.textContent = pieces[piece];
                         pieceElement.className = 'piece';
                         pieceElement.dataset.player = piece === piece.toUpperCase() ? 'white' : 'black';
+                        pieceElement.draggable = true;
+                        pieceElement.dataset.row = row;
+                        pieceElement.dataset.col = col;
+                        pieceElement.ondragstart = handleDragStart;
                         square.appendChild(pieceElement);
+                    }
 
-                        // Add touch event listeners
-                        pieceElement.addEventListener('touchstart', (e) => handleTouchStart(e, pieceElement));
-                        pieceElement.addEventListener('touchmove', handleTouchMove);
-                        pieceElement.addEventListener('touchend', handleTouchEnd);
-                   
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function handleDragStart(event) {
+            const row = event.target.dataset.row;
+            const col = event.target.dataset.col;
+            event.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            const fromData = JSON.parse(event.dataTransfer.getData('text/plain'));
+            const fromRow = parseInt(fromData.row);
+            const fromCol = parseInt(fromData.col);
+            const toRow = parseInt(event.target.dataset.row);
+            const toCol = parseInt(event.target.dataset.col);
+
+            if (isMoveLegal(fromRow, fromCol, toRow, toCol)) {
+                movePiece(fromRow, fromCol, toRow, toCol);
+                createChessboard();
+            }
+        }
+
+        function isMoveLegal(fromRow, fromCol, toRow, toCol) {
+            const piece = initialBoard[fromRow][fromCol];
+            if (!piece || !pieceBelongsToCurrentPlayer(piece)) return false;
+            return true; // Add specific rules here for each piece type
+        }
+
+        function pieceBelongsToCurrentPlayer(piece) {
+            return (currentPlayer === 'white' && piece === piece.toUpperCase()) ||
+                   (currentPlayer === 'black' && piece === piece.toLowerCase());
+        }
+
+        function movePiece(fromRow, fromCol, toRow, toCol) {
+            const piece = initialBoard[fromRow][fromCol];
+            initialBoard[toRow][toCol] = piece;
+            initialBoard[fromRow][fromCol] = null;
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            saveBoardState();
+        }
+
+        function saveBoardState() {
+            localStorage.setItem('chessBoard', JSON.stringify(initialBoard));
+        }
+
+        resetButton.addEventListener('click', () => {
+            localStorage.removeItem('chessBoard');
+            window.location.reload();
+        });
+
+        createChessboard();
+    </script>
+</body>
+</html>
