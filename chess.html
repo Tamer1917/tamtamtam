@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>لعبة الشطرنج</title>
     <style>
         .board {
@@ -38,13 +38,16 @@
             display: flex;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap; /* لضمان أن العناصر لا تخرج عن العرض */
         }
         .timer {
-            font-size: 20px;
-            margin: 0 20px;
+            font-size: 18px; /* تقليل حجم النص قليلاً */
+            margin: 0 10px;
             padding: 5px 10px;
             border: 2px solid #000;
             border-radius: 5px;
+            min-width: 100px; /* تحديد الحد الأدنى للعرض */
+            text-align: center;
         }
     </style>
 </head>
