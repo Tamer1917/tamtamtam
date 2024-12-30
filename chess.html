@@ -19,23 +19,30 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
+            cursor: pointer;
         }
         .black { background-color: #8B4513; }
         .white { background-color: #f0d9b5; }
         .piece {
             font-size: 36px;
-            user-select: none;
-            touch-action: none;
-            position: absolute;
+        }
+        .selected {
+            border: 3px solid yellow;
+        }
+        .turn-indicator {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
+    <div class="turn-indicator" id="turnIndicator">دور اللاعب: الأبيض</div>
     <div class="board" id="board"></div>
 
     <script>
         const board = document.getElementById('board');
+        const turnIndicator = document.getElementById('turnIndicator');
         const initialBoard = [
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -52,6 +59,9 @@
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
 
+        let currentPlayer = 'white';  // يحدد دور اللاعب الحالي
+        let selectedSquare = null;    // لتخزين المربع الذي تم اختياره
+
         function createBoard() {
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
@@ -65,57 +75,86 @@
                         const piece = document.createElement('span');
                         piece.classList.add('piece');
                         piece.textContent = pieces[initialBoard[row][col]];
-                        piece.dataset.row = row;
-                        piece.dataset.col = col;
-                        piece.draggable = true;
-
-                        piece.addEventListener('touchstart', onPieceTouchStart);
-                        piece.addEventListener('touchmove', onPieceTouchMove);
-                        piece.addEventListener('touchend', onPieceTouchEnd);
-
                         square.appendChild(piece);
                     }
 
+                    square.addEventListener('click', () => onSquareClick(row, col));
                     board.appendChild(square);
                 }
             }
         }
 
-        let draggedPiece = null;
-
-        function onPieceTouchStart(event) {
-            draggedPiece = event.target;
-            draggedPiece.style.zIndex = 1000;
-            event.preventDefault();
-        }
-
-        function onPieceTouchMove(event) {
-            if (draggedPiece) {
-                draggedPiece.style.left = event.touches[0].pageX - 30 + 'px';
-                draggedPiece.style.top = event.touches[0].pageY - 30 + 'px';
-            }
-        }
-
-        function onPieceTouchEnd(event) {
-            if (draggedPiece) {
-                const targetSquare = document.elementFromPoint(event.changedTouches[0].pageX, event.changedTouches[0].pageY);
-                if (targetSquare && targetSquare.classList.contains('square')) {
-                    const targetRow = targetSquare.dataset.row;
-                    const targetCol = targetSquare.dataset.col;
-                    draggedPiece.dataset.row = targetRow;
-                    draggedPiece.dataset.col = targetCol;
-                    targetSquare.appendChild(draggedPiece);
-                } else {
-                    // If no valid square, reset the piece's position
-                    const originalSquare = document.querySelector(`[data-row="${draggedPiece.dataset.row}"][data-col="${draggedPiece.dataset.col}"]`);
-                    originalSquare.appendChild(draggedPiece);
+        function onSquareClick(row, col) {
+            const piece = initialBoard[row][col];
+            if (selectedSquare) {
+                const [prevRow, prevCol] = selectedSquare;
+                if (isValidMove(prevRow, prevCol, row, col)) {
+                    movePiece(prevRow, prevCol, row, col);
+                    changeTurn();
                 }
-                draggedPiece.style.zIndex = '';
-                draggedPiece.style.left = '';
-                draggedPiece.style.top = '';
-                draggedPiece = null;
+                deselectSquare();
+            } else if (piece && isPieceOfCurrentPlayer(piece)) {
+                selectSquare(row, col);
             }
-            event.preventDefault();
+        }
+
+        function selectSquare(row, col) {
+            if (selectedSquare) deselectSquare();
+            selectedSquare = [row, col];
+            const square = getSquareElement(row, col);
+            square.classList.add('selected');
+        }
+
+        function deselectSquare() {
+            if (selectedSquare) {
+                const [row, col] = selectedSquare;
+                const square = getSquareElement(row, col);
+                square.classList.remove('selected');
+                selectedSquare = null;
+            }
+        }
+
+        function getSquareElement(row, col) {
+            return document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+        }
+
+        function isPieceOfCurrentPlayer(piece) {
+            if (currentPlayer === 'white' && piece === piece.toUpperCase()) return true;
+            if (currentPlayer === 'black' && piece === piece.toLowerCase()) return true;
+            return false;
+        }
+
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+            // هنا يمكن إضافة قاعدة التحقق من صحة الحركة
+            return true; // للحفاظ على بساطة الكود
+        }
+
+        function movePiece(fromRow, fromCol, toRow, toCol) {
+            const piece = initialBoard[fromRow][fromCol];
+            initialBoard[toRow][toCol] = piece;
+            initialBoard[fromRow][fromCol] = '';
+            renderBoard();
+        }
+
+        function changeTurn() {
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
+        }
+
+        function renderBoard() {
+            const squares = document.querySelectorAll('.square');
+            squares.forEach(square => {
+                const row = square.dataset.row;
+                const col = square.dataset.col;
+                const piece = initialBoard[row][col];
+                square.innerHTML = '';
+                if (piece) {
+                    const pieceElement = document.createElement('span');
+                    pieceElement.classList.add('piece');
+                    pieceElement.textContent = pieces[piece];
+                    square.appendChild(pieceElement);
+                }
+            });
         }
 
         createBoard();
