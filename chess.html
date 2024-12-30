@@ -17,19 +17,19 @@
 
         #chessboard {
             display: grid;
-            grid-template-columns: repeat(8, 48px);
-            grid-template-rows: repeat(8, 48px);
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
             border: 2px solid black;
             margin-bottom: 20px;
         }
 
         .square {
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px;
+            font-size: 36px;
             position: relative;
         }
 
@@ -51,36 +51,17 @@
         }
 
         #reset-button {
-            padding: 8px 16px;
-            font-size: 14px;
+            padding: 10px 20px;
+            font-size: 16px;
             cursor: pointer;
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
-            margin-top: 20px;
         }
 
         #reset-button:hover {
             background-color: #0056b3;
-        }
-
-        @media (max-width: 768px) {
-            #chessboard {
-                grid-template-columns: repeat(8, 40px);
-                grid-template-rows: repeat(8, 40px);
-            }
-
-            .square {
-                width: 40px;
-                height: 40px;
-                font-size: 28px;
-            }
-
-            #reset-button {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
         }
     </style>
 </head>
@@ -89,7 +70,6 @@
     <button id="reset-button">بداية جديدة</button>
 
     <script>
-        // نفس الكود البرمجي دون تعديل
         const board = document.getElementById('chessboard');
         const resetButton = document.getElementById('reset-button');
         const pieces = {
@@ -161,15 +141,67 @@
         }
 
         function isMoveLegal(fromSquare, toSquare) {
-            // ...
+            const fromRow = parseInt(fromSquare.dataset.row);
+            const fromCol = parseInt(fromSquare.dataset.col);
+            const toRow = parseInt(toSquare.dataset.row);
+            const toCol = parseInt(toSquare.dataset.col);
+
+            const piece = initialBoard[fromRow][fromCol];
+            const targetPiece = initialBoard[toRow][toCol];
+
+            switch (piece.toLowerCase()) {
+                case 'p': return isPawnMoveLegal(piece, fromRow, fromCol, toRow, toCol, targetPiece);
+                case 'r': return isRookMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
+                case 'n': return isKnightMoveLegal(fromRow, fromCol, toRow, toCol);
+                case 'b': return isBishopMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
+                case 'q': return isQueenMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
+                case 'k': return isKingMoveLegal(fromRow, fromCol, toRow, toCol, targetPiece);
+                default: return false;
+            }
+        }
+
+        function isPathClear(fromRow, fromCol, toRow, toCol) {
+            if (fromRow === toRow) {
+                const step = fromCol < toCol ? 1 : -1;
+                for (let col = fromCol + step; col !== toCol; col += step) {
+                    if (initialBoard[fromRow][col] !== null) return false;
+                }
+            } else if (fromCol === toCol) {
+                const step = fromRow < toRow ? 1 : -1;
+                for (let row = fromRow + step; row !== toRow; row += step) {
+                    if (initialBoard[row][fromCol] !== null) return false;
+                }
+            } else {
+                const rowStep = fromRow < toRow ? 1 : -1;
+                const colStep = fromCol < toCol ? 1 : -1;
+                let row = fromRow + rowStep;
+                let col = fromCol + colStep;
+                while (row !== toRow && col !== toCol) {
+                    if (initialBoard[row][col] !== null) return false;
+                    row += rowStep;
+                    col += colStep;
+                }
+            }
+            return true;
         }
 
         function movePiece(fromSquare, toSquare) {
-            // ...
+            const fromRow = parseInt(fromSquare.dataset.row);
+            const fromCol = parseInt(fromSquare.dataset.col);
+            const toRow = parseInt(toSquare.dataset.row);
+            const toCol = parseInt(toSquare.dataset.col);
+
+            const piece = initialBoard[fromRow][fromCol];
+            initialBoard[toRow][toCol] = piece;
+            initialBoard[fromRow][fromCol] = null;
+
+            saveBoardState();
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            createChessboard();
         }
 
         function saveBoardState() {
-            // ...
+            localStorage.setItem('chessBoard', JSON.stringify(initialBoard));
         }
 
         resetButton.addEventListener('click', () => {
